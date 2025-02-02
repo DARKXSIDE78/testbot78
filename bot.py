@@ -4,10 +4,7 @@ from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 import re
 import subprocess
-from collections import deque
-from pymongo import MongoClient
 from flask import Flask
-from datetime import datetime
 
 flask_app = Flask(__name__)
 
@@ -27,16 +24,10 @@ flask_thread = threading.Thread(target=run_flask)
 flask_thread.daemon = True
 flask_thread.start()
 
-
 # Telegram API credentials
 api_id = '29478593'  # Replace with your actual API ID
 api_hash = '24c3a9ded4ac74bab73cbe6dafbc8b3e'  # Replace with your actual API Hash
 bot_token = '7580321526:AAGZPhU26-l-cVr7EMXO-R6GY4k6CQOH9hY'  # Replace with your bot token
-log_channel = '@teteetetsss'
-client = MongoClient('mongodb+srv://nitinkumardhundhara:DARKXSIDE78@cluster0.wdive.mongodb.net/?retryWrites=true&w=majority')
-db = client['AdvEncPosterTest']
-users_collection = db['users']
-queue_collection = db['queue']
 
 # Anilist API URL
 ANILIST_API_URL = 'https://graphql.anilist.co'
@@ -46,6 +37,10 @@ user_settings = {}
 
 # Create a Pyrogram client
 app = Client("bot_session", api_id=api_id, api_hash=api_hash, bot_token=bot_token)
+
+async def escape_markdown_v2(text: str) -> str:
+    # Simply return the text as it is without escaping any characters
+    return text
 
 # Poster fetching method
 async def get_poster(anime_id: int = None):
@@ -105,6 +100,7 @@ async def get_anime_data(anime_name: str, language: str, subtitle: str, season: 
 **➢** **Audio:** **{audio}**
 **➢** **Subtitle:** **{subtitle}**
 **➢** **Genres:** **{genres}**
+**➢** **Rating:** **{average_score}%**
 **──────────────────**
 **Main Hub:** **{user_settings.get('channel', '@GenAnimeOfc')}**
 """
@@ -134,6 +130,7 @@ async def send_message_to_user(chat_id: int, message: str, image_url: str = None
 
 # Default encoding settings if no custom settings are provided
 DEFAULT_SETTINGS = {
+    'encoding_type': '1080p',  # Default encoding type (1080p)
     'preset': 'veryfast',
     'codec': 'libx264',
     'crf': '27',
@@ -148,13 +145,30 @@ DEFAULT_SETTINGS = {
     'artist': 'GenAnimeOfc'
 }
 
-@app.on_message(filters.command("encall"))
+@app.on_message(filters.command("enctype"))
+async def set_encoding_type(client, message):
+    chat_id = message.chat.id
+    if len(message.text.split()) == 1:
+        await app.send_message(chat_id, "Please provide an encoding type ('1080p' or 'HDRIP').")
+        return
+
+    encoding_type = message.text.split()[1].lower()
+
+    if encoding_type not in ['1080p', 'hdrip']:
+        await app.send_message(chat_id, "Invalid encoding type. Please use '1080p' or 'HDRIP'.")
+        return
+
+    user_settings.setdefault(chat_id, {})['encoding_type'] = encoding_type
+    await app.send_message(chat_id, f"Encoding type set to: {encoding_type}")
+
+@app.on_message(filters.command("encodeall"))
 async def encode_all(client, message):
     chat_id = message.chat.id
-
+    
     if message.reply_to_message:
         video_file = None
-
+        
+        # Check if the message contains a video or a supported document
         if message.reply_to_message.video:
             video_file = await message.reply_to_message.download()
         elif message.reply_to_message.document:
@@ -163,133 +177,84 @@ async def encode_all(client, message):
                 video_file = await message.reply_to_message.download()
 
         if video_file:
-            await app.send_message(chat_id, "Video File received\n\nDownloading, Encoding will start in a few moments...")
-            buttons = InlineKeyboardMarkup([
-        [
-            InlineKeyboardButton("ᴍᴀɪɴ ʜᴜʙ", url="https://t.me/Animes_Chidori"),
-            InlineKeyboardButton("ꜱᴜᴩᴩᴏʀᴛ ᴄʜᴀɴɴᴇʟ", url="https://t.me/+z05NzRmuqjBkYTdl"),
-        ],
-        [
-            InlineKeyboardButton("ᴅᴇᴠᴇʟᴏᴩᴇʀ", url="https://t.me/darkxside78"),
-        ],
-    ])
-            buttons = InlineKeyboardMarkup([
-                [
-                    InlineKeyboardButton("HDRip", callback_data="HDRip"),
-                    InlineKeyboardButton("1080p", callback_data="1080p"),
-                ],
-                [
-                    InlineKeyboardButton("Cancel", callback_data="cancel"),
-                ],
-            ])
+            encoding_type = user_settings.get(chat_id, {}).get('encoding_type', '1080p')
+            
+            # Initial message saying the video is received
+            msg = await app.send_message(chat_id, "I got the video. Downloading will start soon...")
 
-            users_collection.update_one({'chat_id': chat_id}, {'$set': {'video_file': video_file}}, upsert=True)
-            await app.send_message(chat_id, "Please select the type of video resolution (HDRip or 1080p) you want to encode.", reply_markup=buttons)
+            # Step 1: Downloading phase
+            await msg.edit("Downloading...")
+
+            # Simulate download (You can remove this if the file is downloaded instantly)
+            await asyncio.sleep(30)
+
+            # Step 2: Encoding phase
+            await msg.edit("Encoding... Uploading will start soon...")
+
+            # Encode the video based on the encoding type
+            await encode_video_by_type(client, chat_id, video_file, encoding_type)
+
+            # Step 3: Uploading phase
+            await msg.edit("Uploading...")
+
+            # Upload the encoded video after the process
+            await app.send_document(chat_id, video_file)
+
+            # After uploading, delete the status message
+            await msg.delete()
         else:
-            await app.send_message(chat_id, "Please reply to a video file (mkv, mp4, avi, etc.) or a document containing a video.")
+            await app.send_message(chat_id, "Please reply to a valid video file (mkv, mp4, avi, etc.) or a document containing a video.")
     else:
-        await app.send_message(chat_id, "Please reply to a video file (mkv, mp4, avi, etc.) or a document containing a video with /encall.")
+        await app.send_message(chat_id, "Please reply to a valid video file (mkv, mp4, avi, etc.) or a document containing a video with /encodeall.")
 
-@app.on_callback_query(filters.regex("HDRip|1080p|cancel"))
-async def handle_video_type(client, callback_query):
-    chat_id = callback_query.message.chat.id
-    video_type = callback_query.data
 
-    if video_type == "cancel":
-        await app.send_message(chat_id, "Encoding canceled.")
-        return
-
-    user_data = users_collection.find_one({'chat_id': chat_id})
-    if not user_data or 'video_file' not in user_data:
-        await app.send_message(chat_id, "No video file found. Please reply to a video file and try again.")
-        return
-
-    video_file = user_data['video_file']
-    encoding_queue.append((chat_id, video_file, video_type))
-    await app.send_message(chat_id, f"Selected resolution: {video_type}. Added to queue. Encoding will begin shortly...")
-    await process_queue()
-
-async def encode_video_by_type(client, chat_id, video_file, video_type):
-    # Define resolution scale mappings
+async def encode_video_by_type(client, chat_id, video_file, encoding_type):
+    # Resolution mapping for HDRIP encoding
     resolution_scale = {
         '480p': '850x480',
         '720p': '1280x720',
         '1080p': '1920x1080'
     }
 
-    # Get user settings or use default encoding settings
-    settings = {**DEFAULT_SETTINGS, **user_settings.get(chat_id, {})}
-    
-    # If "raw" is selected, encode the video in all resolutions
-    if video_type == 'raw':
-        resolutions = ['480p', '720p', '1080p']
-    else:
-        # If "1080p" is selected, only encode 480p and 720p, skip 1080p
-        resolutions = ['480p', '720p']
-    
-    # For each resolution (except the last if 1080p was selected)
+    # If encoding type is HDRIP, encode all resolutions
+    resolutions = ['480p', '720p', '1080p'] if encoding_type == 'hdrip' else ['480p', '720p']
+
     for resolution in resolutions:
         output_file = f"{video_file}_{resolution}.mkv"
-        scale = resolution_scale.get(resolution)  # Get the resolution scale
+        scale = resolution_scale.get(resolution)
 
-        if resolution == '1080p' and video_type == '1080p':
-            # If the resolution is 1080p, just adjust the metadata without re-encoding
-            command = [
-                "ffmpeg", "-i", video_file,
-                "-c:v", settings['codec'],
-                "-c:a", settings['audio'],
-                "-b:v", settings['video_bitrate'],
-                "-b:a", settings['audio_bitrate'],
-                "-preset", settings['preset'],
-                "-crf", settings['crf'],
-                "-metadata", f"title={settings['title']}",
-                "-metadata", f"author={settings['author']}",
-                "-metadata", f"artist={settings['artist']}",
-                "-metadata", f"copyright={settings['copyright']}",
-                "-metadata:s:s:0", f"language={settings['subtitle']}",
-                output_file
-            ]
-        else:
-            # Build the FFmpeg command for encoding (for 480p and 720p)
-            command = [
-                "ffmpeg", "-i", video_file,
-                "-vf", f"scale={scale}",  # Apply resolution scale
-                "-c:v", settings['codec'],
-                "-preset", settings['preset'],
-                "-crf", settings['crf'],
-                "-b:v", settings['video_bitrate'],
-                "-c:a", settings['audio'],
-                "-b:a", settings['audio_bitrate']
-            ]
+        command = [
+            "ffmpeg", "-i", video_file,
+            "-vf", f"scale={scale}",
+            "-c:v", DEFAULT_SETTINGS['codec'],
+            "-preset", DEFAULT_SETTINGS['preset'],
+            "-crf", DEFAULT_SETTINGS['crf'],
+            "-b:v", DEFAULT_SETTINGS['video_bitrate'],
+            "-c:a", DEFAULT_SETTINGS['audio'],
+            "-b:a", DEFAULT_SETTINGS['audio_bitrate']
+        ]
 
-            # Add subtitle and metadata if available
-            if settings['subtitle'] != 'GenAnimeOfc':
-                command.extend(["-scodec", "mov_text", "-metadata:s:s:0", f"language={settings['subtitle']}"])
+        # If subtitle is set
+        if DEFAULT_SETTINGS['subtitle'] != 'GenAnimeOfc':
+            command.extend(["-scodec", "mov_text", "-metadata:s:s:0", f"language={DEFAULT_SETTINGS['subtitle']}"])
 
-            if settings['title'] != 'GenAnimeOfc':
-                command.extend(["-metadata", f"title={settings['title']}"])
-            if settings['author'] != 'GenAnimeOfc':
-                command.extend(["-metadata", f"author={settings['author']}"])
-            if settings['artist'] != 'GenAnimeOfc':
-                command.extend(["-metadata", f"artist={settings['artist']}"])
-            if settings['copyright'] != 'DARKXSIDE78':
-                command.extend(["-metadata", f"copyright={settings['copyright']}"])
+        # Add metadata
+        if DEFAULT_SETTINGS['title'] != 'GenAnimeOfc':
+            command.extend(["-metadata", f"title={DEFAULT_SETTINGS['title']}"])
+        if DEFAULT_SETTINGS['author'] != 'GenAnimeOfc':
+            command.extend(["-metadata", f"author={DEFAULT_SETTINGS['author']}"])
+        if DEFAULT_SETTINGS['artist'] != 'GenAnimeOfc':
+            command.extend(["-metadata", f"artist={DEFAULT_SETTINGS['artist']}"])
+        if DEFAULT_SETTINGS['copyright'] != 'DARKXSIDE78':
+            command.extend(["-metadata", f"copyright={DEFAULT_SETTINGS['copyright']}"])
 
-            command.append(output_file)  # Output file name
+        command.append(output_file)
 
-        # Run the FFmpeg command to encode the video
         try:
             subprocess.run(command, check=True)
             await app.send_message(chat_id, f"Successfully encoded the video to {resolution}.")
         except subprocess.CalledProcessError as e:
             await app.send_message(chat_id, f"Error encoding the video to {resolution}: {e}")
-
-        # After encoding, you can also send the encoded file to the user
-        try:
-            await app.send_document(chat_id, output_file)
-            await app.send_message(chat_id, f"Encoded video {resolution} has been sent.")
-        except Exception as e:
-            await app.send_message(chat_id, f"Failed to send the encoded video: {e}")
 
 # Command handlers for all the different encoding options
 
@@ -402,20 +367,20 @@ async def set_title(client, message):
     await app.send_message(chat_id, f"Video title set to: {title}")
 
 # Command to show all current settings
+# Command handlers for encoding settings (you can keep these as is)
 @app.on_message(filters.command("encsetting"))
 async def show_settings(client, message):
     chat_id = message.chat.id
     settings = user_settings.get(chat_id, {})
-    
-    # Display current settings, using defaults if no settings are available
     settings_message = "\n".join([f"{key}: {value}" for key, value in {**DEFAULT_SETTINGS, **settings}.items()])
     await app.send_message(chat_id, f"Current encoding settings:\n{settings_message}")
 
+# Command handler for /start
 @app.on_message(filters.command("start"))
 async def start(client, message):
     chat_id = message.chat.id
-    users_collection.update_one({'chat_id': chat_id}, {'$set': {'username': message.from_user.username}}, upsert=True)
-
+    
+    # Define buttons using Pyrogram's InlineKeyboardButton and InlineKeyboardMarkup
     buttons = InlineKeyboardMarkup([
         [
             InlineKeyboardButton("ᴍᴀɪɴ ʜᴜʙ", url="https://t.me/Animes_Chidori"),
@@ -426,7 +391,10 @@ async def start(client, message):
         ],
     ])
 
-    photo_url = "https://images5.alphacoders.com/113/thumb-1920-1134698.jpg"
+    # Photo URL or local file path
+    photo_url = "https://images5.alphacoders.com/113/thumb-1920-1134698.jpg"  # Replace with your image URL
+
+    # Send the message with a photo using send_photo() method
     await app.send_photo(
         chat_id, 
         photo_url,  # This can be a URL or local file path
@@ -437,12 +405,7 @@ async def start(client, message):
             f"**ᴜsᴇ /help ᴛᴏ ɢᴇᴛ ᴀʟʟ ᴛʜᴇ ᴡᴏʀᴋ ɪɴғᴏ.**"
         ),
         reply_markup=buttons
-    )   
-
-@app.on_message(filters.command("users"))
-async def show_users(client, message):
-    user_count = users_collection.count_documents({})
-    await app.send_message(message.chat.id, f"Total users using the bot: {user_count}")
+    )
 
 @app.on_message(filters.command("anime"))
 async def anime(client, message):
@@ -461,9 +424,10 @@ async def anime(client, message):
     template, cover_image = await get_anime_data(anime_name, language, subtitle, season)
 
     # Escape special Markdown characters for the caption
+    safe_template = await escape_markdown_v2(template)
 
     # Send the template and poster image (with compression)
-    await send_message_to_user(chat_id, cover_image)
+    await send_message_to_user(chat_id, safe_template, cover_image)
 
 # Command handler for /setlang
 @app.on_message(filters.command("setlang"))
@@ -520,4 +484,4 @@ async def start_bot():
     await app.idle()
 
 if __name__ == '__main__':
-    app.run() 
+    app.run()
