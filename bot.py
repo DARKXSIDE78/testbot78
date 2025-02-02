@@ -7,6 +7,7 @@ import subprocess
 from collections import deque
 from pymongo import MongoClient
 from flask import Flask
+from datetime import datetime
 
 flask_app = Flask(__name__)
 
@@ -31,7 +32,8 @@ flask_thread.start()
 api_id = '29478593'  # Replace with your actual API ID
 api_hash = '24c3a9ded4ac74bab73cbe6dafbc8b3e'  # Replace with your actual API Hash
 bot_token = '7580321526:AAGZPhU26-l-cVr7EMXO-R6GY4k6CQOH9hY'  # Replace with your bot token
-log_channel_id = '@teteetetsss'
+log_channel = '@teteetetsss'
+log_img = 'https://images5.alphacoders.com/122/1223033.jpg'
 client = MongoClient('mongodb+srv://nitinkumardhundhara:DARKXSIDE78@cluster0.wdive.mongodb.net/?retryWrites=true&w=majority')
 db = client['AdvEncPosterTest']
 users_collection = db['users']
@@ -55,7 +57,7 @@ async def process_queue():
 
 async def on_bot_start():
     log_message = "Bot has started successfully!"
-    await log_to_channel(log_message)
+    await log_to_channel(log_message, log_img)
 
 def escape_markdown_v2(text: str) -> str:
     characters_to_escape = [
@@ -71,9 +73,18 @@ def escape_markdown_v2(text: str) -> str:
     
     return text
 
-async def log_to_channel(log_message: str):
-    log_channel = log_channel_id  # Replace with your actual logging channel username
-    await app.send_message(log_channel, log_message)
+async def log_to_channel(log_message: str, photo_url: str = None):
+    try:
+        if photo_url:
+            await app.send_photo(
+                log_channel,  # Log channel ID or username
+                photo_url=log_img,  # URL or file path of the photo
+                caption=log_message  # The log message (e.g., bot startup message)
+            )
+        else:
+            await app.send_message(log_channel_id, log_message)
+    except Exception as e:
+        print(f"Error sending log: {e}")
 
 # Poster fetching method
 async def get_poster(anime_id: int = None):
