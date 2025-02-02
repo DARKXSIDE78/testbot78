@@ -6,6 +6,26 @@ import re
 import subprocess
 from collections import deque
 from pymongo import MongoClient
+from flask import Flask
+
+flask_app = Flask(__name__)
+
+# Create a health check route
+@flask_app.route("/health")
+def health_check():
+    return "OK", 200
+
+# Run Flask app in a separate thread so it doesn't block the main bot process
+import threading
+
+def run_flask():
+    flask_app.run(host='0.0.0.0', port=8000)
+
+# Start the Flask app in a separate thread
+flask_thread = threading.Thread(target=run_flask)
+flask_thread.daemon = True
+flask_thread.start()
+
 
 # Telegram API credentials
 api_id = '29478593'  # Replace with your actual API ID
@@ -484,4 +504,4 @@ async def start_bot():
     await app.idle()
 
 if __name__ == '__main__':
-    app.run()
+    app.run() 
