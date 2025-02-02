@@ -53,6 +53,10 @@ async def process_queue():
         chat_id, video_file, video_type = encoding_queue.popleft()
         await encode_video_by_type(chat_id, video_file, video_type)
 
+async def on_bot_start():
+    log_message = "Bot has started successfully!"
+    await log_to_channel(log_message)
+
 def escape_markdown_v2(text: str) -> str:
     characters_to_escape = [
         r'_', r'[`', r'~', r'|', r'$',
@@ -429,6 +433,24 @@ async def start(client, message):
             InlineKeyboardButton("ᴅᴇᴠᴇʟᴏᴩᴇʀ", url="https://t.me/darkxside78"),
         ],
     ])
+
+    # Collect user information
+    user_name = message.from_user.first_name
+    user_username = message.from_user.username
+    user_id = message.from_user.id
+    current_time = message.date.strftime("%Y-%m-%d %H:%M:%S")
+
+    # Create log message
+    log_message = f"""
+User Started Bot:
+**Name:** {user_name}
+**Username:** @{user_username if user_username else 'N/A'}
+**User ID:** {user_id}
+**Time:** {current_time}
+"""
+    # Send log message to the logging channel
+    await log_to_channel(log_message)
+
     photo_url = "https://images5.alphacoders.com/113/thumb-1920-1134698.jpg"
     await app.send_photo(
         chat_id, 
@@ -440,7 +462,7 @@ async def start(client, message):
             f"**ᴜsᴇ /help ᴛᴏ ɢᴇᴛ ᴀʟʟ ᴛʜᴇ ᴡᴏʀᴋ ɪɴғᴏ.**"
         ),
         reply_markup=buttons
-    )
+    )   
 
 @app.on_message(filters.command("users"))
 async def show_users(client, message):
