@@ -443,7 +443,7 @@ async def anime(client, message):
     template, cover_image = await get_anime_data(anime_name, language, subtitle, season)
 
     # Escape special Markdown characters for the caption
-    safe_template = await escape_markdown_v2(template)
+    safe_template = escape_markdown_v2(template)
 
     # Send the template and poster image (with compression)
     await send_message_to_user(chat_id, safe_template, cover_image)
