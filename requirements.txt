@@ -2,4 +2,5 @@ aiohttp
 pyrogram
 pymongo
 python-dotenv
-Flask
+flask
+tgcrypto
