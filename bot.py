@@ -184,11 +184,23 @@ async def encode_all(client, message):
 
         if video_file:
             await app.send_message(chat_id, "Video File received\n\nDownloading, Encoding will start in a few moments...")
-
             buttons = InlineKeyboardMarkup([
-                [InlineKeyboardButton("HDRip", callback_data="HDRip")],
-                [InlineKeyboardButton("1080p", callback_data="1080p")],
-                [InlineKeyboardButton("Cancel", callback_data="cancel")]
+        [
+            InlineKeyboardButton("ᴍᴀɪɴ ʜᴜʙ", url="https://t.me/Animes_Chidori"),
+            InlineKeyboardButton("ꜱᴜᴩᴩᴏʀᴛ ᴄʜᴀɴɴᴇʟ", url="https://t.me/+z05NzRmuqjBkYTdl"),
+        ],
+        [
+            InlineKeyboardButton("ᴅᴇᴠᴇʟᴏᴩᴇʀ", url="https://t.me/darkxside78"),
+        ],
+    ])
+            buttons = InlineKeyboardMarkup([
+                [
+                    InlineKeyboardButton("HDRip", callback_data="HDRip"),
+                    InlineKeyboardButton("1080p", callback_data="1080p"),
+                ],
+                [
+                    InlineKeyboardButton("Cancel", callback_data="cancel"),
+                ],
             ])
 
             users_collection.update_one({'chat_id': chat_id}, {'$set': {'video_file': video_file}}, upsert=True)
@@ -404,9 +416,13 @@ async def start(client, message):
     users_collection.update_one({'chat_id': chat_id}, {'$set': {'username': message.from_user.username}}, upsert=True)
 
     buttons = InlineKeyboardMarkup([
-        [InlineKeyboardButton("ᴍᴀɪɴ ʜᴜʙ", url="https://t.me/Animes_Chidori")],
-        [InlineKeyboardButton("ꜱᴜᴩᴩᴏʀᴛ ᴄʜᴀɴɴᴇʟ", url="https://t.me/+z05NzRmuqjBkYTdl")],
-        [InlineKeyboardButton("ᴅᴇᴠᴇʟᴏᴩᴇʀ", url="https://t.me/darkxside78")],
+        [
+            InlineKeyboardButton("ᴍᴀɪɴ ʜᴜʙ", url="https://t.me/Animes_Chidori"),
+            InlineKeyboardButton("ꜱᴜᴩᴩᴏʀᴛ ᴄʜᴀɴɴᴇʟ", url="https://t.me/+z05NzRmuqjBkYTdl"),
+        ],
+        [
+            InlineKeyboardButton("ᴅᴇᴠᴇʟᴏᴩᴇʀ", url="https://t.me/darkxside78"),
+        ],
     ])
     photo_url = "https://images5.alphacoders.com/113/thumb-1920-1134698.jpg"
     await app.send_photo(
