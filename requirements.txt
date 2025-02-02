@@ -1,7 +1,5 @@
 aiohttp
-asyncio
 pyrogram
-collections
 pymongo
 python-dotenv
 Flask
