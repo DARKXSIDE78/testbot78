@@ -82,7 +82,7 @@ async def log_to_channel(log_message: str, photo_url: str = None):
                 caption=log_message  # The log message (e.g., bot startup message)
             )
         else:
-            await app.send_message(log_channel_id, log_message)
+            await app.send_message(log_channel, log_message)
     except Exception as e:
         print(f"Error sending log: {e}")
 
