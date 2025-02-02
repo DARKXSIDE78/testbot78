@@ -3,3 +3,4 @@ asyncio
 pyrogram
 collections
 pymongo
+python-dotenv
