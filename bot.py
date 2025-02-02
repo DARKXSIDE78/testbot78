@@ -61,11 +61,12 @@ async def on_bot_start():
 
 def escape_markdown_v2(text: str) -> str:
     characters_to_escape = [
-        r'_', r'[`', r'~', r'|', r'$',
-        r'-', r'+', r'.', r'!', r'[' , r']', r'=', r'\\'
+        r'_', r'`', r'~', r'|', r'$', r'-', 
+        r'+', r'.', r'!', r'[', r']', r'=', r'\\'
     ]
     
     for char in characters_to_escape:
+        # Using a raw string to handle backslashes properly
         text = text.replace(char, f'\\{char}')
     
     # We will allow the parentheses to remain unescaped
