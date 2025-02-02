@@ -33,7 +33,6 @@ api_id = '29478593'  # Replace with your actual API ID
 api_hash = '24c3a9ded4ac74bab73cbe6dafbc8b3e'  # Replace with your actual API Hash
 bot_token = '7580321526:AAGZPhU26-l-cVr7EMXO-R6GY4k6CQOH9hY'  # Replace with your bot token
 log_channel = '@teteetetsss'
-log_img = 'https://images5.alphacoders.com/122/1223033.jpg'
 client = MongoClient('mongodb+srv://nitinkumardhundhara:DARKXSIDE78@cluster0.wdive.mongodb.net/?retryWrites=true&w=majority')
 db = client['AdvEncPosterTest']
 users_collection = db['users']
@@ -47,45 +46,6 @@ user_settings = {}
 
 # Create a Pyrogram client
 app = Client("bot_session", api_id=api_id, api_hash=api_hash, bot_token=bot_token)
-
-encoding_queue = deque()
-
-async def process_queue():
-    while encoding_queue:
-        chat_id, video_file, video_type = encoding_queue.popleft()
-        await encode_video_by_type(chat_id, video_file, video_type)
-
-async def on_bot_start():
-    log_message = "Bot has started successfully!"
-    await log_to_channel(log_message, log_img)
-
-def escape_markdown_v2(text: str) -> str:
-    characters_to_escape = [
-        r'_', r'`', r'~', r'|', r'$', r'-', 
-        r'+', r'.', r'!', r'[', r']', r'=', r'\\'
-    ]
-    
-    for char in characters_to_escape:
-        # Using a raw string to handle backslashes properly
-        text = text.replace(char, f'\\{char}')
-    
-    # We will allow the parentheses to remain unescaped
-    text = text.replace(r'\(', '(').replace(r'\)', ')')
-    
-    return text
-
-async def log_to_channel(log_message: str, photo_url: str = None):
-    try:
-        if photo_url:
-            await app.send_photo(
-                log_channel,  # Log channel ID or username
-                photo_url=log_img,  # URL or file path of the photo
-                caption=log_message  # The log message (e.g., bot startup message)
-            )
-        else:
-            await app.send_message(log_channel, log_message)
-    except Exception as e:
-        print(f"Error sending log: {e}")
 
 # Poster fetching method
 async def get_poster(anime_id: int = None):
@@ -145,7 +105,6 @@ async def get_anime_data(anime_name: str, language: str, subtitle: str, season: 
 **➢** **Audio:** **{audio}**
 **➢** **Subtitle:** **{subtitle}**
 **➢** **Genres:** **{genres}**
-**➢** **Rating:** **{average_score}%**
 **──────────────────**
 **Main Hub:** **{user_settings.get('channel', '@GenAnimeOfc')}**
 """
@@ -250,25 +209,31 @@ async def handle_video_type(client, callback_query):
     await app.send_message(chat_id, f"Selected resolution: {video_type}. Added to queue. Encoding will begin shortly...")
     await process_queue()
 
-async def encode_video_by_type(chat_id, video_file, video_type):
+async def encode_video_by_type(client, chat_id, video_file, video_type):
+    # Define resolution scale mappings
     resolution_scale = {
         '480p': '850x480',
         '720p': '1280x720',
         '1080p': '1920x1080'
     }
 
-    settings = users_collection.find_one({'chat_id': chat_id}) or DEFAULT_SETTINGS
-
-    if video_type == 'HDRip':
+    # Get user settings or use default encoding settings
+    settings = {**DEFAULT_SETTINGS, **user_settings.get(chat_id, {})}
+    
+    # If "raw" is selected, encode the video in all resolutions
+    if video_type == 'raw':
         resolutions = ['480p', '720p', '1080p']
     else:
+        # If "1080p" is selected, only encode 480p and 720p, skip 1080p
         resolutions = ['480p', '720p']
-
+    
+    # For each resolution (except the last if 1080p was selected)
     for resolution in resolutions:
         output_file = f"{video_file}_{resolution}.mkv"
-        scale = resolution_scale.get(resolution)
+        scale = resolution_scale.get(resolution)  # Get the resolution scale
 
         if resolution == '1080p' and video_type == '1080p':
+            # If the resolution is 1080p, just adjust the metadata without re-encoding
             command = [
                 "ffmpeg", "-i", video_file,
                 "-c:v", settings['codec'],
@@ -281,30 +246,45 @@ async def encode_video_by_type(chat_id, video_file, video_type):
                 "-metadata", f"author={settings['author']}",
                 "-metadata", f"artist={settings['artist']}",
                 "-metadata", f"copyright={settings['copyright']}",
-                "-metadata:s:s", f"language={settings['subtitle']}",
+                "-metadata:s:s:0", f"language={settings['subtitle']}",
                 output_file
             ]
         else:
+            # Build the FFmpeg command for encoding (for 480p and 720p)
             command = [
                 "ffmpeg", "-i", video_file,
-                "-vf", f"scale={scale}",
+                "-vf", f"scale={scale}",  # Apply resolution scale
                 "-c:v", settings['codec'],
                 "-preset", settings['preset'],
                 "-crf", settings['crf'],
                 "-b:v", settings['video_bitrate'],
                 "-c:a", settings['audio'],
-                "-b:a", settings['audio_bitrate'],
-                output_file
+                "-b:a", settings['audio_bitrate']
             ]
 
+            # Add subtitle and metadata if available
+            if settings['subtitle'] != 'GenAnimeOfc':
+                command.extend(["-scodec", "mov_text", "-metadata:s:s:0", f"language={settings['subtitle']}"])
+
+            if settings['title'] != 'GenAnimeOfc':
+                command.extend(["-metadata", f"title={settings['title']}"])
+            if settings['author'] != 'GenAnimeOfc':
+                command.extend(["-metadata", f"author={settings['author']}"])
+            if settings['artist'] != 'GenAnimeOfc':
+                command.extend(["-metadata", f"artist={settings['artist']}"])
+            if settings['copyright'] != 'DARKXSIDE78':
+                command.extend(["-metadata", f"copyright={settings['copyright']}"])
+
+            command.append(output_file)  # Output file name
+
+        # Run the FFmpeg command to encode the video
         try:
             subprocess.run(command, check=True)
             await app.send_message(chat_id, f"Successfully encoded the video to {resolution}.")
         except subprocess.CalledProcessError as e:
             await app.send_message(chat_id, f"Error encoding the video to {resolution}: {e}")
-        except Exception as e:
-            await app.send_message(chat_id, f"An unexpected error occurred: {e}")
 
+        # After encoding, you can also send the encoded file to the user
         try:
             await app.send_document(chat_id, output_file)
             await app.send_message(chat_id, f"Encoded video {resolution} has been sent.")
@@ -446,23 +426,6 @@ async def start(client, message):
         ],
     ])
 
-    # Collect user information
-    user_name = message.from_user.first_name
-    user_username = message.from_user.username
-    user_id = message.from_user.id
-    current_time = message.date.strftime("%Y-%m-%d %H:%M:%S")
-
-    # Create log message
-    log_message = f"""
-User Started Bot:
-**Name:** {user_name}
-**Username:** @{user_username if user_username else 'N/A'}
-**User ID:** {user_id}
-**Time:** {current_time}
-"""
-    # Send log message to the logging channel
-    await log_to_channel(log_message)
-
     photo_url = "https://images5.alphacoders.com/113/thumb-1920-1134698.jpg"
     await app.send_photo(
         chat_id, 
@@ -498,10 +461,9 @@ async def anime(client, message):
     template, cover_image = await get_anime_data(anime_name, language, subtitle, season)
 
     # Escape special Markdown characters for the caption
-    safe_template = escape_markdown_v2(template)
 
     # Send the template and poster image (with compression)
-    await send_message_to_user(chat_id, safe_template, cover_image)
+    await send_message_to_user(chat_id, cover_image)
 
 # Command handler for /setlang
 @app.on_message(filters.command("setlang"))
@@ -554,9 +516,7 @@ async def set_channel(client, message):
 # Run the Pyrogram client
 async def start_bot():
     await app.start()
-    await on_bot_start()
     print("Bot is running...")
-    await process_queue()
     await app.idle()
 
 if __name__ == '__main__':
