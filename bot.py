@@ -31,6 +31,7 @@ flask_thread.start()
 api_id = '29478593'  # Replace with your actual API ID
 api_hash = '24c3a9ded4ac74bab73cbe6dafbc8b3e'  # Replace with your actual API Hash
 bot_token = '7580321526:AAGZPhU26-l-cVr7EMXO-R6GY4k6CQOH9hY'  # Replace with your bot token
+log_channel_id = '@teteetetsss'
 client = MongoClient('mongodb+srv://nitinkumardhundhara:DARKXSIDE78@cluster0.wdive.mongodb.net/?retryWrites=true&w=majority')
 db = client['AdvEncPosterTest']
 users_collection = db['users']
@@ -65,6 +66,10 @@ def escape_markdown_v2(text: str) -> str:
     text = text.replace(r'\(', '(').replace(r'\)', ')')
     
     return text
+
+async def log_to_channel(log_message: str):
+    log_channel = log_channel_id  # Replace with your actual logging channel username
+    await app.send_message(log_channel, log_message)
 
 # Poster fetching method
 async def get_poster(anime_id: int = None):
@@ -515,6 +520,7 @@ async def set_channel(client, message):
 # Run the Pyrogram client
 async def start_bot():
     await app.start()
+    await on_bot_start()
     print("Bot is running...")
     await process_queue()
     await app.idle()
