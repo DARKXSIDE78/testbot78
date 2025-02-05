@@ -28,38 +28,6 @@ api_id = '29478593'  # Replace with your actual API ID
 api_hash = '24c3a9ded4ac74bab73cbe6dafbc8b3e'  # Replace with your actual API Hash
 bot_token = '7426089831:AAFCCHq9EBxyt2LCj4irZ6As-UyGUnHN7zg'  # Replace with your bot token
 
-@app.on_message(filters.command("start"))
-async def start(client, message):
-    chat_id = message.chat.id
-    
-    # Define buttons using Pyrogram's InlineKeyboardButton and InlineKeyboardMarkup
-    buttons = InlineKeyboardMarkup([
-        [
-            InlineKeyboardButton("ᴍᴀɪɴ ʜᴜʙ", url="https://t.me/GenAnimeOfc"),
-            InlineKeyboardButton("ꜱᴜᴩᴩᴏʀᴛ ᴄʜᴀɴɴᴇʟ", url="https://t.me/+z05NzRmuqjBkYTdl"),
-        ],
-        [
-            InlineKeyboardButton("ᴅᴇᴠᴇʟᴏᴩᴇʀ", url="https://t.me/darkxside78"),
-        ],
-    ])
-
-    # Photo URL or local file path
-    photo_url = "https://images5.alphacoders.com/113/thumb-1920-1134698.jpg"  # Replace with your image URL
-
-    # Send the message with a photo using send_photo() method
-    await app.send_photo(
-        chat_id, 
-        photo_url,  # This can be a URL or local file path
-        caption=(
-            f"**ʙᴀᴋᴋᴀᴀᴀ** **{message.from_user.first_name}****!!!**\n"
-            f"**ɪ ᴀᴍ ᴀɴ ᴀɴɪᴍᴇ ᴜᴘʟᴏᴀᴅ ᴛᴏᴏʟ ʙᴏᴛ.**\n"
-            f"**ɪ ᴡᴀs ᴄʀᴇᴀᴛᴇᴅ ᴛᴏ ᴍᴀᴋᴇ ᴀɴɪᴍᴇ ᴜᴘʟᴏᴀᴅᴇʀ's ʟɪғᴇ ᴇᴀsɪᴇʀ...**\n"
-            f"**ɪ ᴀᴍ sᴛɪʟʟ ɪɴ ʙᴇᴛᴀ ᴛᴇsᴛɪɴɢ ᴠᴇʀsɪᴏɴ...**"
-            f"**ɪ ᴄᴀɴ ᴏɴʟʏ ʜᴇʟᴘ ʏᴏᴜ ᴡɪᴛʜ ʏᴏᴜʀ ᴀɴɪᴍᴇ ᴄʜᴀɴɴᴇʟ ᴛᴇᴍᴘʟᴀᴛᴇ ɢᴇɴᴇʀᴀᴛɪᴏɴ ғᴏʀ ɴᴏᴡ...**"
-        ),
-        reply_markup=buttons
-    )
-
 # Anilist API URL
 ANILIST_API_URL = 'https://graphql.anilist.co'
 
@@ -288,6 +256,39 @@ async def set_channel(client, message):
     channel = " ".join(message.text.split()[1:])
     user_settings['channel'] = channel
     await app.send_message(chat_id, f"Channel set to: {channel}")
+
+@app.on_message(filters.command("start"))
+async def start(client, message):
+    chat_id = message.chat.id
+    
+    # Define buttons using Pyrogram's InlineKeyboardButton and InlineKeyboardMarkup
+    buttons = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("ᴍᴀɪɴ ʜᴜʙ", url="https://t.me/GenAnimeOfc"),
+            InlineKeyboardButton("ꜱᴜᴩᴩᴏʀᴛ ᴄʜᴀɴɴᴇʟ", url="https://t.me/+z05NzRmuqjBkYTdl"),
+        ],
+        [
+            InlineKeyboardButton("ᴅᴇᴠᴇʟᴏᴩᴇʀ", url="https://t.me/darkxside78"),
+        ],
+    ])
+
+    # Photo URL or local file path
+    photo_url = "https://images5.alphacoders.com/113/thumb-1920-1134698.jpg"  # Replace with your image URL
+
+    # Send the message with a photo using send_photo() method
+    await app.send_photo(
+        chat_id, 
+        photo_url,  # This can be a URL or local file path
+        caption=(
+            f"**ʙᴀᴋᴋᴀᴀᴀ** **{message.from_user.first_name}****!!!**\n"
+            f"**ɪ ᴀᴍ ᴀɴ ᴀɴɪᴍᴇ ᴜᴘʟᴏᴀᴅ ᴛᴏᴏʟ ʙᴏᴛ.**\n"
+            f"**ɪ ᴡᴀs ᴄʀᴇᴀᴛᴇᴅ ᴛᴏ ᴍᴀᴋᴇ ᴀɴɪᴍᴇ ᴜᴘʟᴏᴀᴅᴇʀ's ʟɪғᴇ ᴇᴀsɪᴇʀ...**\n"
+            f"**ɪ ᴀᴍ sᴛɪʟʟ ɪɴ ʙᴇᴛᴀ ᴛᴇsᴛɪɴɢ ᴠᴇʀsɪᴏɴ...**"
+            f"**ɪ ᴄᴀɴ ᴏɴʟʏ ʜᴇʟᴘ ʏᴏᴜ ᴡɪᴛʜ ʏᴏᴜʀ ᴀɴɪᴍᴇ ᴄʜᴀɴɴᴇʟ ᴛᴇᴍᴘʟᴀᴛᴇ ɢᴇɴᴇʀᴀᴛɪᴏɴ ғᴏʀ ɴᴏᴡ...**"
+        ),
+        reply_markup=buttons
+    )
+
 
 # Run the Pyrogram client
 async def start_bot():
