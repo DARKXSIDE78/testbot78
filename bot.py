@@ -26,7 +26,7 @@ flask_thread.start()
 # Telegram API credentials
 api_id = '29478593'  # Replace with your actual API ID
 api_hash = '24c3a9ded4ac74bab73cbe6dafbc8b3e'  # Replace with your actual API Hash
-bot_token = '7580321526:AAGZPhU26-l-cVr7EMXO-R6GY4k6CQOH9hY'  # Replace with your bot token
+bot_token = '7426089831:AAFCCHq9EBxyt2LCj4irZ6As-UyGUnHN7zg'  # Replace with your bot token
 
 # Anilist API URL
 ANILIST_API_URL = 'https://graphql.anilist.co'
