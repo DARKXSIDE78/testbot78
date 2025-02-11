@@ -43,8 +43,8 @@ None till now
 * AniList Api ([GitHub](https://github.com/AniList/ApiV2-GraphQL-Docs))
 
 
-For improvements PR or contact [@LostB053](https://t.me/lostb053) or [@hanabi_support](https://t.me/hanabi_support)<br>
-Can ask for support too but don't expect much (since i myself am learning yet)<br>
+For improvements PR or contact [@DARKXSIDE78](https://t.me/DARKXSIDE78) or [@GenAnimeOfcChat](https://t.me/GenAnimeOfcchat)<br>
+Can ask for support too...<br>
 <br>
-<h4>Note: I dropped SauceNAO stuff cuz i couldnt represent it in some good looking manner<br>
-I would be grateful if anybody can help me parse results and organize them like <a href='https://t.me/reverseSearchBot'>@reverseSearchBot</a></h4>Something nearby but good looking would suffice too
+<h4>Note: This is VERSION 2 for the bot so don't expect much but we will add more things soon.<br>
+I would be grateful if anybody can help me...</h4>
