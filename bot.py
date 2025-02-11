@@ -282,7 +282,9 @@ async def fetch_and_send_news():
         feed = await asyncio.to_thread(feedparser.parse, url)
         for entry in feed.entries:
             entry_id = entry.get('id', entry.get('link'))
-            if entry_id not in sent_news_entries:
+            
+            # Check if entry is already in MongoDB to avoid duplicates
+            if not db.sent_news.find_one({"entry_id": entry_id}):
                 sent_news_entries.add(entry_id)
                 
                 # Extract thumbnail if available
@@ -299,6 +301,9 @@ async def fetch_and_send_news():
                 try:
                     await asyncio.sleep(15)  # Adding a delay before sending
                     await app.send_message(chat_id=news_channel, text=msg)
+                    
+                    # Store sent entry in MongoDB to prevent duplication
+                    db.sent_news.insert_one({"entry_id": entry_id, "title": entry.title, "link": entry.link})
                     print(f"Sent news: {entry.title}")
                 except Exception as e:
                     print(f"Error sending news message: {e}")
