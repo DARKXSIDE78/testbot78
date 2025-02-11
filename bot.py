@@ -288,7 +288,7 @@ async def fetch_and_send_news():
                 if 'summary' in entry:
                     msg += f"\n{entry.summary}"
                 try:
-                    await app.send_message(chat_id=news_channel, text=msg, parse_mode="HTML")
+                    await app.send_message(chat_id=news_channel, text=msg, parse_mode="html")
                     print(f"Sent news: {entry.title}")
                 except Exception as e:
                     print(f"Error sending news message: {e}")
