@@ -298,10 +298,6 @@ async def fetch_and_send_news():
                 if 'summary' in entry:
                     msg += f"\n{entry.summary}"
                 
-                # Add content if <content:encoded> is available
-                if 'content' in entry and len(entry.content) > 0:
-                    msg += f"\n\n<b>More details:</b>\n{entry.content[0].value[:1000]}"  # Limiting content length
-                
                 msg += f"\n\n<a href='{entry.link}'>Read more</a>"
 
                 try:
