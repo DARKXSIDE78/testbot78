@@ -296,7 +296,7 @@ async def fetch_and_send_news():
 async def news_feed_loop():
     while True:
         await fetch_and_send_news()
-        await asyncio.sleep(60)
+        await asyncio.sleep(10)
 
 async def main():
     await app.start()
