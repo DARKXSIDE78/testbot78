@@ -306,8 +306,10 @@ async def news_feed_loop():
 async def main():
     await app.start()
     print("Bot is running...")
+    # Schedule the news feed loop to run concurrently with the bot
     asyncio.create_task(news_feed_loop())
-    await asyncio.Future()
+    await asyncio.Future()  # Wait indefinitely (replaces app.idle())
+    await app.stop()
 
 if __name__ == '__main__':
     asyncio.run(main())
