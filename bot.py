@@ -294,13 +294,15 @@ async def fetch_and_send_news():
                 
                 msg = (f"<b>{entry.title}</b>\n"
                        f"<a href='{entry.link}'>Read more</a>")
-                if thumbnail_url:
-                    msg += f"\n<media:thumbnail>{thumbnail_url}</media:thumbnail>"
                 if 'summary' in entry:
                     msg += f"\n{entry.summary}"
                 try:
                     await asyncio.sleep(15)  # Adding a delay before sending
-                    await app.send_message(chat_id=news_channel, text=msg)
+                    
+                    if thumbnail_url:
+                        await app.send_photo(chat_id=news_channel, photo=thumbnail_url, caption=msg)
+                    else:
+                        await app.send_message(chat_id=news_channel, text=msg)
                     
                     # Store sent entry in MongoDB to prevent duplication
                     db.sent_news.insert_one({"entry_id": entry_id, "title": entry.title, "link": entry.link})
