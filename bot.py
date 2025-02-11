@@ -292,10 +292,18 @@ async def fetch_and_send_news():
                 if 'media_thumbnail' in entry:
                     thumbnail_url = entry.media_thumbnail[0]['url']
                 
-                msg = f"<b>{entry.title}</b>\n"
+                msg = f"<b>**{entry.title}**</b>\n"
+                
+                # Add summary
                 if 'summary' in entry:
                     msg += f"\n{entry.summary}"
+                
+                # Add content if <content:encoded> is available
+                if 'content' in entry and len(entry.content) > 0:
+                    msg += f"\n\n<b>More details:</b>\n{entry.content[0].value[:1000]}"  # Limiting content length
+                
                 msg += f"\n\n<a href='{entry.link}'>Read more</a>"
+
                 try:
                     await asyncio.sleep(15)  # Adding a delay before sending
                     
