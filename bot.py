@@ -29,8 +29,8 @@ global_settings_collection = db["global_settings"]
 api_id = '29478593'
 api_hash = '24c3a9ded4ac74bab73cbe6dafbc8b3e'
 bot_token = '7426089831:AAFCCHq9EBxyt2LCj4irZ6As-UyGUnHN7zg'
-url_d = 'https://www.livechart.me/feeds/headlines'
-url_e = 'https://myanimelist.net/rss/news.xml'
+url_d = 'https://myanimelist.net/rss/news.xml'
+url_e = 'https://www.livechart.me/feeds/headlines'
 start_pic = "https://images5.alphacoders.com/113/thumb-1920-1134698.jpg"
 ANILIST_API_URL = 'https://graphql.anilist.co'
 
