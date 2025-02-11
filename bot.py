@@ -3,7 +3,11 @@ import asyncio
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 import re
+import subprocess
 from flask import Flask
+import threading
+import pymongo
+import feedparser
 
 flask_app = Flask(__name__)
 
@@ -12,42 +16,38 @@ flask_app = Flask(__name__)
 def health_check():
     return "OK", 200
 
-# Run Flask app in a separate thread so it doesn't block the main bot process
 import threading
 
 def run_flask():
     flask_app.run(host='0.0.0.0', port=8000)
 
-# Start the Flask app in a separate thread
 flask_thread = threading.Thread(target=run_flask)
 flask_thread.daemon = True
 flask_thread.start()
 
-# Telegram API credentials
-api_id = '29478593'  # Replace with your actual API ID
-api_hash = '24c3a9ded4ac74bab73cbe6dafbc8b3e'  # Replace with your actual API Hash
-bot_token = '7426089831:AAFCCHq9EBxyt2LCj4irZ6As-UyGUnHN7zg'  # Replace with your bot token
-
-# Anilist API URL
+mongo_client = pymongo.MongoClient("mongodb://localhost:27017/")
+db = mongo_client["telegram_bot_db"]
+user_settings_collection = db["user_settings"]
+global_settings_collection = db["global_settings"]
+api_id = '29478593'
+api_hash = '24c3a9ded4ac74bab73cbe6dafbc8b3e'
+bot_token = '7580321526:AAGZPhU26-l-cVr7EMXO-R6GY4k6CQOH9hY'
+url_d = 'https://www.livechart.me/feeds/headlines'
+url_e = 'https://myanimelist.net/rss/news.xml'
+photo_url = "https://images5.alphacoders.com/113/thumb-1920-1134698.jpg"
 ANILIST_API_URL = 'https://graphql.anilist.co'
 
-# This will store user settings temporarily
-user_settings = {}
-
-# Create a Pyrogram client
 app = Client("bot_session", api_id=api_id, api_hash=api_hash, bot_token=bot_token)
 
+
 async def escape_markdown_v2(text: str) -> str:
-    # Simply return the text as it is without escaping any characters
     return text
 
-# Poster fetching method
 async def get_poster(anime_id: int = None):
     if anime_id:
         return f"https://img.anili.st/media/{anime_id}"
-    return "https://envs.sh/YsH.jpg"  # Default image if no poster found
+    return "https://envs.sh/YsH.jpg"
 
-# Fetch detailed anime data from Anilist API
 async def get_anime_data(anime_name: str, language: str, subtitle: str, season: str):
     query = '''
    query ($id: Int, $search: String, $seasonYear: Int) {
@@ -141,127 +141,46 @@ async def get_anime_data(anime_name: str, language: str, subtitle: str, season: 
                     episodes = anime["episodes"]
                     genres = ', '.join(anime["genres"])
                     average_score = anime["averageScore"]
-                    anime_id = anime.get("id")  # Get anime ID for poster URL
+                    anime_id = anime.get("id")
                     
-                    # Get the poster URL asynchronously
                     poster_url = await get_poster(anime_id)
 
-                    # Use user settings for language and subtitle
-                    audio = language
-                    subtitle = subtitle
-                    
-                    # Create a detailed anime template with everything in bold
                     template = f"""
 **{title}**
 **──────────────────**
-**➢** **Season:** **{season}**
-**➢** **Episodes:** **{episodes}**
-**➢** **Audio:** **{audio}**
-**➢** **Subtitle:** **{subtitle}**
-**➢** **Genres:** **{genres}**
-**➢** **Rating:** **{average_score}%**
+**➢ Season:** **{season}**
+**➢ Episodes:** **{episodes}**
+**➢ Audio:** **{language}**
+**➢ Subtitle:** **{subtitle}**
+**➢ Genres:** **{genres}**
+**➢ Rating:** **{average_score}%**
 **──────────────────**
-**Main Hub:** **{user_settings.get('channel', '@GenAnimeOfc')}**
+**Main Hub:** **{(global_settings_collection.find_one({'_id': 'config'}) or {}).get('news_channel', 'GenAnimeOfc')}**
 """
                     return template, poster_url
                 else:
-                    return "Anime not found. Please check the name and try again.", "https://envs.sh/YsH.jpg"  # Default poster
+                    return "Anime not found. Please check the name and try again.", "https://envs.sh/YsH.jpg"
         except asyncio.TimeoutError:
-            return "The request timed out. Please try again later.", "https://envs.sh/YsH.jpg"  # Default poster
+            return "The request timed out. Please try again later.", "https://envs.sh/YsH.jpg"
         except Exception as e:
-            return f"An error occurred: {str(e)}", "https://envs.sh/YsH.jpg"  # Default poster
+            return f"An error occurred: {str(e)}", "https://envs.sh/YsH.jpg"
 
-# Send message using Pyrogram
 async def send_message_to_user(chat_id: int, message: str, image_url: str = None):
     try:
         if image_url:
-            # Send the image with compression on (it will automatically apply compression)
             await app.send_photo(
                 chat_id, 
-                image_url,  # Image URL
-                caption=message,  # Message with the template
+                image_url,
+                caption=message,
             )
         else:
-            # Just send the message without an image
             await app.send_message(chat_id, message)
     except Exception as e:
         print(f"Error sending message: {e}")
 
-@app.on_message(filters.command("anime"))
-async def anime(client, message):
-    chat_id = message.chat.id
-
-    # Get user settings (language, subtitle, and season) or use defaults
-    language = user_settings.get(chat_id, {}).get('language', 'Dual')
-    subtitle = user_settings.get(chat_id, {}).get('subtitle', 'English')
-    season = user_settings.get(chat_id, {}).get('season', None)
-
-    if len(message.text.split()) == 1:
-        await app.send_message(chat_id, "**Please provide an anime name.**")
-        return
-
-    anime_name = " ".join(message.text.split()[1:])
-    template, cover_image = await get_anime_data(anime_name, language, subtitle, season)
-
-    # Escape special Markdown characters for the caption
-    safe_template = await escape_markdown_v2(template)
-
-    # Send the template and poster image (with compression)
-    await send_message_to_user(chat_id, safe_template, cover_image)
-
-# Command handler for /setlang
-@app.on_message(filters.command("setlang"))
-async def set_language(client, message):
-    chat_id = message.chat.id
-    if len(message.text.split()) == 1:
-        await app.send_message(chat_id, "Please provide a language (e.g., 'English', 'Japanese').")
-        return
-
-    language = " ".join(message.text.split()[1:])
-    user_settings.setdefault(chat_id, {})['language'] = language
-    await app.send_message(chat_id, f"Language set to: {language}")
-
-# Command handler for /setsub
-@app.on_message(filters.command("setsub"))
-async def set_subtitle(client, message):
-    chat_id = message.chat.id
-    if len(message.text.split()) == 1:
-        await app.send_message(chat_id, "Please provide a subtitle language (e.g., 'English', 'Spanish').")
-        return
-
-    subtitle = " ".join(message.text.split()[1:])
-    user_settings.setdefault(chat_id, {})['subtitle'] = subtitle
-    await app.send_message(chat_id, f"Subtitle language set to: {subtitle}")
-
-# Command handler for /setseason
-@app.on_message(filters.command("setseason"))
-async def set_season(client, message):
-    chat_id = message.chat.id
-    if len(message.text.split()) == 1:
-        await app.send_message(chat_id, "Please provide a season (e.g., 'Season 1', 'Season 2').")
-        return
-
-    season = " ".join(message.text.split()[1:])
-    user_settings.setdefault(chat_id, {})['season'] = season
-    await app.send_message(chat_id, f"Season set to: {season}")
-
-# Command handler for /setchannel
-@app.on_message(filters.command("setchannel"))
-async def set_channel(client, message):
-    chat_id = message.chat.id
-    if len(message.text.split()) == 1:
-        await app.send_message(chat_id, "Please provide a channel name (e.g., '@YourChannel').")
-        return
-
-    channel = " ".join(message.text.split()[1:])
-    user_settings['channel'] = channel
-    await app.send_message(chat_id, f"Channel set to: {channel}")
-
 @app.on_message(filters.command("start"))
 async def start(client, message):
     chat_id = message.chat.id
-    
-    # Define buttons using Pyrogram's InlineKeyboardButton and InlineKeyboardMarkup
     buttons = InlineKeyboardMarkup([
         [
             InlineKeyboardButton("ᴍᴀɪɴ ʜᴜʙ", url="https://t.me/GenAnimeOfc"),
@@ -272,13 +191,9 @@ async def start(client, message):
         ],
     ])
 
-    # Photo URL or local file path
-    photo_url = "https://images5.alphacoders.com/113/thumb-1920-1134698.jpg"  # Replace with your image URL
-
-    # Send the message with a photo using send_photo() method
-    await app.send_photo(
+     await app.send_photo(
         chat_id, 
-        photo_url,  # This can be a URL or local file path
+        photo_url,
         caption=(
             f"**ʙᴀᴋᴋᴀᴀᴀ** **{message.from_user.first_name}****!!!**\n"
             f"**ɪ ᴀᴍ ᴀɴ ᴀɴɪᴍᴇ ᴜᴘʟᴏᴀᴅ ᴛᴏᴏʟ ʙᴏᴛ.**\n"
@@ -289,12 +204,118 @@ async def start(client, message):
         reply_markup=buttons
     )
 
+@app.on_message(filters.command("anime"))
+async def anime(client, message):
+    chat_id = message.chat.id
 
-# Run the Pyrogram client
-async def start_bot():
+    user_setting = user_settings_collection.find_one({"chat_id": chat_id}) or {}
+    language = user_setting.get('language', 'Dual')
+    subtitle = user_setting.get('subtitle', 'English')
+    season = user_setting.get('season', None)
+
+    if len(message.text.split()) == 1:
+        await app.send_message(chat_id, "**Please provide an anime name.**")
+        return
+
+    anime_name = " ".join(message.text.split()[1:])
+    template, cover_image = await get_anime_data(anime_name, language, subtitle, season)
+    safe_template = await escape_markdown_v2(template)
+    await send_message_to_user(chat_id, safe_template, cover_image)
+
+@app.on_message(filters.command("setlang"))
+async def set_language(client, message):
+    chat_id = message.chat.id
+    if len(message.text.split()) == 1:
+        current = (user_settings_collection.find_one({"chat_id": chat_id}) or {}).get("language", "Dual")
+        await app.send_message(chat_id, f"Current language is: {current}")
+        return
+
+    language = " ".join(message.text.split()[1:])
+    user_settings_collection.update_one({"chat_id": chat_id}, {"$set": {"language": language}}, upsert=True)
+    await app.send_message(chat_id, f"Language set to: {language}")
+
+@app.on_message(filters.command("setsub"))
+async def set_subtitle(client, message):
+    chat_id = message.chat.id
+    if len(message.text.split()) == 1:
+        current = (user_settings_collection.find_one({"chat_id": chat_id}) or {}).get("subtitle", "English")
+        await app.send_message(chat_id, f"Current subtitle is: {current}")
+        return
+
+    subtitle = " ".join(message.text.split()[1:])
+    user_settings_collection.update_one({"chat_id": chat_id}, {"$set": {"subtitle": subtitle}}, upsert=True)
+    await app.send_message(chat_id, f"Subtitle language set to: {subtitle}")
+
+@app.on_message(filters.command("setseason"))
+async def set_season(client, message):
+    chat_id = message.chat.id
+    if len(message.text.split()) == 1:
+        current = (user_settings_collection.find_one({"chat_id": chat_id}) or {}).get("season", "Default Season")
+        await app.send_message(chat_id, f"Current season is: {current}")
+        return
+
+    season = " ".join(message.text.split()[1:])
+    user_settings_collection.update_one({"chat_id": chat_id}, {"$set": {"season": season}}, upsert=True)
+    await app.send_message(chat_id, f"Season set to: {season}")
+
+@app.on_message(filters.command("connectnews"))
+async def connect_news(client, message):
+    chat_id = message.chat.id
+    if len(message.text.split()) == 1:
+        await app.send_message(chat_id, "Please provide a channel id or username (without @).")
+        return
+
+    channel = " ".join(message.text.split()[1:]).strip()
+    global_settings_collection.update_one({"_id": "config"}, {"$set": {"news_channel": channel}}, upsert=True)
+    await app.send_message(chat_id, f"News channel set to: @{channel}")
+
+##############################
+# Background News Feed Functionality
+##############################
+sent_news_entries = set()  # In-memory store of sent entry IDs; consider persisting this if needed.
+
+async def fetch_and_send_news():
+    # Retrieve the news channel from global settings
+    config = global_settings_collection.find_one({"_id": "config"})
+    if not config or "news_channel" not in config:
+        return  # No news channel set yet
+
+    # Prepend '@' as required by Pyrogram when sending to a channel by username
+    news_channel = "@" + config["news_channel"]
+
+    # Process each RSS feed URL
+    for url in [url_d, url_e]:
+        # Use asyncio.to_thread to avoid blocking the event loop while parsing
+        feed = await asyncio.to_thread(feedparser.parse, url)
+        for entry in feed.entries:
+            entry_id = entry.get('id', entry.get('link'))
+            if entry_id not in sent_news_entries:
+                sent_news_entries.add(entry_id)
+                # Create an HTML-formatted message
+                msg = f"<b>{entry.title}</b>\n<a href='{entry.link}'>Read more</a>\n"
+                if 'summary' in entry:
+                    msg += f"\n{entry.summary}"
+                try:
+                    await app.send_message(chat_id=news_channel, text=msg, parse_mode="HTML")
+                    print(f"Sent news: {entry.title}")
+                except Exception as e:
+                    print(f"Error sending news message: {e}")
+
+async def news_feed_loop():
+    while True:
+        await fetch_and_send_news()
+        await asyncio.sleep(60)  # Check for new news every minute
+
+##############################
+# Main Async Runner
+##############################
+async def main():
     await app.start()
     print("Bot is running...")
+    # Schedule the news feed loop to run concurrently with the bot
+    asyncio.create_task(news_feed_loop())
     await app.idle()
+    await app.stop()
 
 if __name__ == '__main__':
-    app.run()
+    asyncio.run(main())
