@@ -23,7 +23,7 @@ flask_thread = threading.Thread(target=run_flask)
 flask_thread.daemon = True
 flask_thread.start()
 
-mongo_client = pymongo.MongoClient("mongodb://localhost:27017/")
+mongo_client = pymongo.MongoClient("mongodb+srv://nitinkumardhundhara:DARKXSIDE78@cluster0.wdive.mongodb.net/?retryWrites=true&w=majority")
 db = mongo_client["telegram_bot_db"]
 user_settings_collection = db["user_settings"]
 global_settings_collection = db["global_settings"]
