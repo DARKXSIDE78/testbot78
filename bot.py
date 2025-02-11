@@ -34,7 +34,7 @@ api_hash = '24c3a9ded4ac74bab73cbe6dafbc8b3e'
 bot_token = '7580321526:AAGZPhU26-l-cVr7EMXO-R6GY4k6CQOH9hY'
 url_d = 'https://www.livechart.me/feeds/headlines'
 url_e = 'https://myanimelist.net/rss/news.xml'
-photo_url = "https://images5.alphacoders.com/113/thumb-1920-1134698.jpg"
+start_pic = "https://images5.alphacoders.com/113/thumb-1920-1134698.jpg"
 ANILIST_API_URL = 'https://graphql.anilist.co'
 
 app = Client("bot_session", api_id=api_id, api_hash=api_hash, bot_token=bot_token)
@@ -190,6 +190,8 @@ async def start(client, message):
             InlineKeyboardButton("ᴅᴇᴠᴇʟᴏᴩᴇʀ", url="https://t.me/darkxside78"),
         ],
     ])
+
+    start_pic=photo_url
 
      await app.send_photo(
         chat_id, 
