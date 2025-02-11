@@ -307,8 +307,7 @@ async def main():
     await app.start()
     print("Bot is running...")
     asyncio.create_task(news_feed_loop())
-    await asyncio.Event().wait()
-    await app.stop()
+    await asyncio.Future()
 
 if __name__ == '__main__':
     asyncio.run(main())
