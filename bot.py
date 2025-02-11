@@ -296,15 +296,11 @@ async def fetch_and_send_news():
                 if 'media_thumbnail' in entry:
                     thumbnail_url = entry.media_thumbnail[0]['url']
                 
-                msg = f"<b>{entry.title}</b>\n"
+                msg = f"<b>**{entry.title}**</b>\n"
                 
                 # Add summary if available
                 if 'summary' in entry:
                     msg += f"\n{entry.summary}"
-                
-                # Add full content if <content:encoded> exists
-                if 'content' in entry and len(entry.content) > 0:
-                    msg += f"\n\n<b>More details:</b>\n{entry.content[0].value}"
                 
                 msg += f"\n\n<a href='{entry.link}'>Read more</a>"
 
