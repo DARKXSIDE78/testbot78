@@ -16,8 +16,6 @@ flask_app = Flask(__name__)
 def health_check():
     return "OK", 200
 
-import threading
-
 def run_flask():
     flask_app.run(host='0.0.0.0', port=8000)
 
@@ -29,6 +27,7 @@ mongo_client = pymongo.MongoClient("mongodb://localhost:27017/")
 db = mongo_client["telegram_bot_db"]
 user_settings_collection = db["user_settings"]
 global_settings_collection = db["global_settings"]
+
 api_id = '29478593'
 api_hash = '24c3a9ded4ac74bab73cbe6dafbc8b3e'
 bot_token = '7580321526:AAGZPhU26-l-cVr7EMXO-R6GY4k6CQOH9hY'
@@ -191,17 +190,16 @@ async def start(client, message):
         ],
     ])
 
-    start_pic=photo_url
+    photo_url = start_pic
 
-     await app.send_photo(
+    await app.send_photo(
         chat_id, 
         photo_url,
         caption=(
-            f"**ʙᴀᴋᴋᴀᴀᴀ** **{message.from_user.first_name}****!!!**\n"
-            f"**ɪ ᴀᴍ ᴀɴ ᴀɴɪᴍᴇ ᴜᴘʟᴏᴀᴅ ᴛᴏᴏʟ ʙᴏᴛ.**\n"
-            f"**ɪ ᴡᴀs ᴄʀᴇᴀᴛᴇᴅ ᴛᴏ ᴍᴀᴋᴇ ᴀɴɪᴍᴇ ᴜᴘʟᴏᴀᴅᴇʀ's ʟɪғᴇ ᴇᴀsɪᴇʀ...**\n"
+            f"**ʙᴀᴋᴋᴀᴀᴀ {message.from_user.first_name}!!!**\n"
+            f"**ɪ ᴀᴍ ᴀɴ ᴀɴɪᴍᴇ ᴜᴩʟᴏᴀᴅ ᴛᴏᴏʟ ʙᴏᴛ.**\n"
+            f"**ɪ ᴡᴀs ᴄʀᴇᴀᴛᴇᴅ ᴛᴏ ᴍᴀᴋᴇ ᴀɴɪᴍᴇ ᴜᴩʟᴏᴀᴅᴇʀ's ʟɪғᴇ ᴇᴀsɪᴇʀ...**\n"
             f"**ɪ ᴀᴍ sᴛɪʟʟ ɪɴ ʙᴇᴛᴀ ᴛᴇsᴛɪɴɢ ᴠᴇʀsɪᴏɴ...**"
-            f"**ɪ ᴄᴀɴ ᴏɴʟʏ ʜᴇʟᴘ ʏᴏᴜ ᴡɪᴛʜ ʏᴏᴜʀ ᴀɴɪᴍᴇ ᴄʜᴀɴɴᴇʟ ᴛᴇᴍᴘʟᴀᴛᴇ ɢᴇɴᴇʀᴀᴛɪᴏɴ ғᴏʀ ɴᴏᴡ...**"
         ),
         reply_markup=buttons
     )
@@ -209,7 +207,6 @@ async def start(client, message):
 @app.on_message(filters.command("anime"))
 async def anime(client, message):
     chat_id = message.chat.id
-
     user_setting = user_settings_collection.find_one({"chat_id": chat_id}) or {}
     language = user_setting.get('language', 'Dual')
     subtitle = user_setting.get('subtitle', 'English')
@@ -277,23 +274,18 @@ async def connect_news(client, message):
 sent_news_entries = set()  # In-memory store of sent entry IDs; consider persisting this if needed.
 
 async def fetch_and_send_news():
-    # Retrieve the news channel from global settings
     config = global_settings_collection.find_one({"_id": "config"})
     if not config or "news_channel" not in config:
-        return  # No news channel set yet
+        return
 
-    # Prepend '@' as required by Pyrogram when sending to a channel by username
     news_channel = "@" + config["news_channel"]
 
-    # Process each RSS feed URL
     for url in [url_d, url_e]:
-        # Use asyncio.to_thread to avoid blocking the event loop while parsing
         feed = await asyncio.to_thread(feedparser.parse, url)
         for entry in feed.entries:
             entry_id = entry.get('id', entry.get('link'))
             if entry_id not in sent_news_entries:
                 sent_news_entries.add(entry_id)
-                # Create an HTML-formatted message
                 msg = f"<b>{entry.title}</b>\n<a href='{entry.link}'>Read more</a>\n"
                 if 'summary' in entry:
                     msg += f"\n{entry.summary}"
@@ -306,7 +298,7 @@ async def fetch_and_send_news():
 async def news_feed_loop():
     while True:
         await fetch_and_send_news()
-        await asyncio.sleep(60)  # Check for new news every minute
+        await asyncio.sleep(60)
 
 ##############################
 # Main Async Runner
@@ -314,7 +306,6 @@ async def news_feed_loop():
 async def main():
     await app.start()
     print("Bot is running...")
-    # Schedule the news feed loop to run concurrently with the bot
     asyncio.create_task(news_feed_loop())
     await app.idle()
     await app.stop()
