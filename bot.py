@@ -11,16 +11,14 @@ import feedparser
 
 flask_app = Flask(__name__)
 
-# Create a health check route
 @flask_app.route("/health")
 def health_check():
     return "OK", 200
 
 def run_flask():
-    flask_app.run(host='0.0.0.0', port=8000)
+    flask_app.run(host='0.0.0.0', port=8000, threaded=True)
 
-flask_thread = threading.Thread(target=run_flask)
-flask_thread.daemon = True
+flask_thread = threading.Thread(target=run_flask, daemon=True)
 flask_thread.start()
 
 mongo_client = pymongo.MongoClient("mongodb+srv://nitinkumardhundhara:DARKXSIDE78@cluster0.wdive.mongodb.net/?retryWrites=true&w=majority")
@@ -300,16 +298,12 @@ async def news_feed_loop():
         await fetch_and_send_news()
         await asyncio.sleep(60)
 
-##############################
-# Main Async Runner
-##############################
 async def main():
     await app.start()
     print("Bot is running...")
-    # Schedule the news feed loop to run concurrently with the bot
     asyncio.create_task(news_feed_loop())
-    await asyncio.Future()  # Wait indefinitely (replaces app.idle())
-    await app.stop()
+    await app.idle()
 
 if __name__ == '__main__':
-    asyncio.run(main())
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(main())
