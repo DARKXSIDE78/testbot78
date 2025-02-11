@@ -1,0 +1,17 @@
+V1:
+
+Added Template Generator.
+Added /setlang, /setchannel, /setsubtitle, /encall, /enccode, etc...
+FFmpeg Encoder to encode video in multiple quality 480p,720p,1080p.
+
+V2:
+
+Removed FFmpeg Encoder [ERROR].
+Removed FFmpeg related commands.
+Added News Fetcher and RSS.
+Added /connectnews command to connect news channel.
+
+V2.05:
+
+Added Delay in News Fetcher.
+Added Thumbnail extractor from RSS.
