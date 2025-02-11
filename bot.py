@@ -30,7 +30,7 @@ global_settings_collection = db["global_settings"]
 
 api_id = '29478593'
 api_hash = '24c3a9ded4ac74bab73cbe6dafbc8b3e'
-bot_token = '7580321526:AAGZPhU26-l-cVr7EMXO-R6GY4k6CQOH9hY'
+bot_token = '7426089831:AAFCCHq9EBxyt2LCj4irZ6As-UyGUnHN7zg'
 url_d = 'https://www.livechart.me/feeds/headlines'
 url_e = 'https://myanimelist.net/rss/news.xml'
 start_pic = "https://images5.alphacoders.com/113/thumb-1920-1134698.jpg"
