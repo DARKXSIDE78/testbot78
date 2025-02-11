@@ -284,10 +284,20 @@ async def fetch_and_send_news():
             entry_id = entry.get('id', entry.get('link'))
             if entry_id not in sent_news_entries:
                 sent_news_entries.add(entry_id)
-                msg = f"<b>{entry.title}</b>\n<a href='{entry.link}'>Read more</a>\n"
+                
+                # Extract thumbnail if available
+                thumbnail_url = None
+                if 'media_thumbnail' in entry:
+                    thumbnail_url = entry.media_thumbnail[0]['url']
+                
+                msg = (f"<b>{entry.title}</b>\n"
+                       f"<a href='{entry.link}'>Read more</a>")
+                if thumbnail_url:
+                    msg += f"\n<media:thumbnail>{thumbnail_url}</media:thumbnail>"
                 if 'summary' in entry:
                     msg += f"\n{entry.summary}"
                 try:
+                    await asyncio.sleep(15)  # Adding a delay before sending
                     await app.send_message(chat_id=news_channel, text=msg)
                     print(f"Sent news: {entry.title}")
                 except Exception as e:
