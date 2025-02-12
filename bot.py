@@ -34,7 +34,7 @@ url_b = 'https://cr-news-api-service.prd.crunchyrollsvc.com/v1/en-US/rss'
 start_pic = "https://images5.alphacoders.com/113/thumb-1920-1134698.jpg"
 ANILIST_API_URL = 'https://graphql.anilist.co'
 
-app = Client("bot_session", api_id=api_id, api_hash=api_hash, bot_token=bot_token)
+app = Client("GenToolBot", api_id=api_id, api_hash=api_hash, bot_token=bot_token)
 
 
 async def escape_markdown_v2(text: str) -> str:
@@ -139,6 +139,7 @@ async def get_anime_data(anime_name: str, language: str, subtitle: str, season: 
                     genres = ', '.join(anime["genres"])
                     average_score = anime["averageScore"]
                     anime_id = anime.get("id")
+                    main_hub = (global_settings_collection.find_one({'_id': 'config'}) or {}).get('main_hub', 'GenAnimeOfc')
                     
                     poster_url = await get_poster(anime_id)
 
@@ -152,7 +153,7 @@ async def get_anime_data(anime_name: str, language: str, subtitle: str, season: 
 **➢ Genres:** **{genres}**
 **➢ Rating:** **{average_score}%**
 **──────────────────**
-**Main Hub:** **{(global_settings_collection.find_one({'_id': 'config'}) or {}).get('news_channel', 'GenAnimeOfc')}**
+**Main Hub:** **{main_hub}**
 """
                     return template, poster_url
                 else:
@@ -230,6 +231,18 @@ async def set_language(client, message):
     language = " ".join(message.text.split()[1:])
     user_settings_collection.update_one({"chat_id": chat_id}, {"$set": {"language": language}}, upsert=True)
     await app.send_message(chat_id, f"Language set to: {language}")
+
+@app.on_message(filters.command("setchannel"))
+async def set_main_hub(client, message):
+    chat_id = message.chat.id
+    if len(message.text.split()) == 1:
+        current = (global_settings_collection.find_one({"_id": "config"}) or {}).get("main_hub", "GenAnimeOfc")
+        await app.send_message(chat_id, f"Current Main Hub is: {current}")
+        return
+
+    main_hub = " ".join(message.text.split()[1:])
+    global_settings_collection.update_one({"_id": "config"}, {"$set": {"main_hub": main_hub}}, upsert=True)
+    await app.send_message(chat_id, f"Main Hub set to: {main_hub}")
 
 @app.on_message(filters.command("setsub"))
 async def set_subtitle(client, message):
