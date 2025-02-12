@@ -2,7 +2,7 @@ import aiohttp
 import asyncio
 from config import ANILIST_API_URL
 
-async def get_manga_data(manga_name: str, chapters: str, main_hub: str):
+async def get_manga_data(manga_name: str, chapters: str, manga_hub: str):
     query = '''
     query ($search: String) {
       Media(type: MANGA, search: $search) {
@@ -61,7 +61,7 @@ async def get_manga_data(manga_name: str, chapters: str, main_hub: str):
 **➢ Chapters:** **{chapters}**
 **➢ Genres:** **{genres}**
 **──────────────────**
-**Main Hub:** **{main_hub}**"""
+**Main Hub:** **{manga_hub}**"""
                     return template, cover_image  # ✅ Correct return statement
                 else:
                     return "Manga not found. Please check the name and try again.", None
