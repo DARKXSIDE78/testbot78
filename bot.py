@@ -86,9 +86,8 @@ async def anime(client, message):
         return
 
     anime_name = " ".join(message.text.split()[1:])
-    template, cover_image = await get_anime_data(anime_name, language, subtitle, season)
-    await send_message_to_user(chat_id, template, cover_image)
-
+    template, cover_image = await get_anime_data(anime_name, language, subtitle, season, global_settings_collection)
+    await send_message_to_user(app, chat_id, template, cover_image)
 
 @app.on_message(filters.command("manga"))
 async def manga(client, message):
