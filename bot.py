@@ -79,15 +79,16 @@ async def anime(client, message):
     user_setting = user_settings_collection.find_one({"chat_id": chat_id}) or {}
     language = user_setting.get('language', 'Dual')
     subtitle = user_setting.get('subtitle', 'English')
-    season = user_setting.get('season')
+    season = user_setting.get('season', None)
 
     if len(message.text.split()) == 1:
-        await client.send_message(chat_id, "**Please provide an anime name.**")
+        await app.send_message(chat_id, "**Please provide an anime name.**")
         return
 
     anime_name = " ".join(message.text.split()[1:])
-    template, cover_image = await get_anime_data(global_settings_collection, anime_name, language, subtitle, season)
-    await send_message_to_user(client, chat_id, template, cover_image)
+    template, cover_image = await get_anime_data(anime_name, language, subtitle, season)
+    await send_message_to_user(chat_id, template, cover_image)
+
 
 @app.on_message(filters.command("manga"))
 async def manga(client, message):
