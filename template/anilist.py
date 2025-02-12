@@ -92,7 +92,7 @@ async def get_anime_data(anime_name: str, language: str, subtitle: str, season: 
             return f"An error occurred: {str(e)}", "https://envs.sh/YsH.jpg"
 
 async def send_message_to_user(app: Client, chat_id: int, message: str, image_url: str = None):
-    """Sends a message or image with caption to a Telegram user."""
+    """Sends a message or image with a caption to a Telegram user."""
     try:
         if image_url:
             await app.send_photo(chat_id, image_url, caption=message)
