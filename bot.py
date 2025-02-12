@@ -281,7 +281,7 @@ async def fetch_and_send_news():
 
     news_channel = "@" + config["news_channel"]
 
-    for url in [url_a, url_b]:
+    for url in [URL_A, URL_B]:
         feed = await asyncio.to_thread(feedparser.parse, url)
 
         # Reverse the feed entries to send from last to first
