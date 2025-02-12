@@ -17,8 +17,10 @@ from modules.rss.rss import news_feed_loop
 
 mongo_client = pymongo.MongoClient(MONGO_URI)
 db = mongo_client["telegram_bot_db"]
+
 user_settings_collection = db["user_settings"]
 global_settings_collection = db["global_settings"]
+manga_settings_collection = db["Manga"]
 
 
 app = Client("GenToolBot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
@@ -90,47 +92,50 @@ async def anime(client, message):
 @app.on_message(filters.command("manga"))
 async def manga(client, message):
     chat_id = message.chat.id
+
     user_setting = user_settings_collection.find_one({"chat_id": chat_id}) or {}
     chapters = user_setting.get("chapters", None)  
 
-    global_settings_collection = db["Manga"]  # Ensure this is your MongoDB collection
-    manga_channel = (global_settings_collection.find_one({'_id': 'config'}) or {}).get('manga_channel', '@FraxxManga')
     if len(message.text.split()) == 1:
-        await app.send_message(chat_id, "**Please provide a manga name.**")
+        await client.send_message(chat_id, "**Please provide a manga name.**")
         return
 
     manga_name = " ".join(message.text.split()[1:])
-    template, cover_image = await get_manga_data(global_settings_collection, manga_name, chapters, manga_channel)  # ✅ Pass manga_channel & chapters
 
-    await send_message_to_user(chat_id, template, cover_image)
+    # Fetch manga_channel from global settings
+    manga_channel = (manga_settings_collection.find_one({'_id': 'config'}) or {}).get('manga_channel', '@FraxxManga')
+
+    template, cover_image = await get_manga_data(manga_name, chapters, manga_channel)
+
+    await send_message_to_user(client, chat_id, template, cover_image)
 
 @app.on_message(filters.command("setchapters"))
 async def set_chapters(client, message):
     chat_id = message.chat.id
     if len(message.text.split()) == 1:
         current = (user_settings_collection.find_one({"chat_id": chat_id}) or {}).get("chapters", "Fetching from Anilist")
-        await app.send_message(chat_id, f"Current chapter setting: {current}")
+        await client.send_message(chat_id, f"Current chapter setting: {current}")
         return
 
     chapters = message.text.split()[1]
     if chapters.lower() == "{chapters}":
         user_settings_collection.update_one({"chat_id": chat_id}, {"$unset": {"chapters": ""}}, upsert=True)
-        await app.send_message(chat_id, "Chapters reset to fetch from Anilist.")
+        await client.send_message(chat_id, "Chapters reset to fetch from Anilist.")
     else:
         user_settings_collection.update_one({"chat_id": chat_id}, {"$set": {"chapters": chapters}}, upsert=True)
-        await app.send_message(chat_id, f"Chapters set to: {chapters}")
+        await client.send_message(chat_id, f"Chapters set to: {chapters}")
 
 @app.on_message(filters.command("setmangachannel"))
 async def set_manga_channel(client, message):
     chat_id = message.chat.id
     if len(message.text.split()) == 1:
         current = (global_settings_collection.find_one({"_id": "config"}) or {}).get("manga_channel", "No channel set")
-        await app.send_message(chat_id, f"Current Manga Channel: {current}")
+        await client.send_message(chat_id, f"Current Manga Channel: {current}")
         return
 
     manga_channel = " ".join(message.text.split()[1:])
-    global_settings_collection.update_one({"_id": "config"}, {"$set": {"manga_channel": manga_channel}}, upsert=True)
-    await app.send_message(chat_id, f"Manga Channel set to: @{manga_channel}")
+    manga_settings_collection.update_one({"_id": "config"}, {"$set": {"manga_channel": manga_channel}}, upsert=True)
+    await client.send_message(chat_id, f"Manga Channel set to: {manga_channel}")
 
 @app.on_message(filters.command("setlang"))
 async def set_language(client, message):
