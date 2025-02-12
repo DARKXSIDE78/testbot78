@@ -2,39 +2,25 @@ import aiohttp
 import asyncio
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
-import re
 import subprocess
-from flask import Flask
 import threading
 import pymongo
 import feedparser
+from config import API_ID, API_HASH, BOT_TOKEN, URL_A, URL_B, START_PIC, ANILIST_API_URL, MONGO_URI
+from webhook import start_webhook
 
-flask_app = Flask(__name__)
 
-@flask_app.route("/health")
-def health_check():
-    return "OK", 200
-
-def run_flask():
-    flask_app.run(host='0.0.0.0', port=8000, threaded=True)
-
-flask_thread = threading.Thread(target=run_flask, daemon=True)
-flask_thread.start()
-
-mongo_client = pymongo.MongoClient("mongodb+srv://nitinkumardhundhara:DARKXSIDE78@cluster0.wdive.mongodb.net/?retryWrites=true&w=majority")
+mongo_client = pymongo.MongoClient(MONGO_URI)
 db = mongo_client["telegram_bot_db"]
 user_settings_collection = db["user_settings"]
 global_settings_collection = db["global_settings"]
 
-api_id = '29478593'
-api_hash = '24c3a9ded4ac74bab73cbe6dafbc8b3e'
-bot_token = '7426089831:AAFCCHq9EBxyt2LCj4irZ6As-UyGUnHN7zg'
-url_a = 'https://myanimelist.net/rss/news.xml'
-url_b = 'https://cr-news-api-service.prd.crunchyrollsvc.com/v1/en-US/rss'
-start_pic = "https://images5.alphacoders.com/113/thumb-1920-1134698.jpg"
-ANILIST_API_URL = 'https://graphql.anilist.co'
 
-app = Client("GenToolBot", api_id=api_id, api_hash=api_hash, bot_token=bot_token)
+app = Client("GenToolBot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
+
+
+webhook_thread = threading.Thread(target=start_webhook, daemon=True)
+webhook_thread.start()
 
 
 async def escape_markdown_v2(text: str) -> str:
