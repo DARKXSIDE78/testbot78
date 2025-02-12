@@ -91,7 +91,7 @@ async def anime(client, message):
 async def manga(client, message):
     chat_id = message.chat.id
     user_setting = user_settings_collection.find_one({"chat_id": chat_id}) or {}
-    manga_channel = (global_settings_collection.find_one({"_id": "config"}) or {}).get("manga_channel", "GenMangaOfc")  # ✅ Fetch manga_channel
+    manga_channel = (global_settings_collection.find_one({"_id": "config"}) or {}).get("manga_channel", "@FraxxManga")  # ✅ Fetch manga_channel
     chapters = user_setting.get("chapters", None)  
 
     if len(message.text.split()) == 1:
