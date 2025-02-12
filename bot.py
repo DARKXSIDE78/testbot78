@@ -20,7 +20,6 @@ db = mongo_client["telegram_bot_db"]
 
 user_settings_collection = db["user_settings"]
 global_settings_collection = db["global_settings"]
-manga_settings_collection = db["Manga"]
 
 
 app = Client("GenToolBot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
