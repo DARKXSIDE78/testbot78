@@ -244,7 +244,7 @@ async def set_main_hub(client, message):
     global_settings_collection.update_one({"_id": "config"}, {"$set": {"main_hub": main_hub}}, upsert=True)
     await app.send_message(chat_id, f"Main Hub set to: {main_hub}")
 
-@app.on_message(filters.command("setsub"))
+@app.on_message(filters.command("setsubtitle"))
 async def set_subtitle(client, message):
     chat_id = message.chat.id
     if len(message.text.split()) == 1:
@@ -260,13 +260,17 @@ async def set_subtitle(client, message):
 async def set_season(client, message):
     chat_id = message.chat.id
     if len(message.text.split()) == 1:
-        current = (user_settings_collection.find_one({"chat_id": chat_id}) or {}).get("season", "Default Season")
+        current = (global_settings_collection.find_one({"_id": "config"}) or {}).get("season", "Default Season")
         await app.send_message(chat_id, f"Current season is: {current}")
         return
 
-    season = " ".join(message.text.split()[1:])
-    user_settings_collection.update_one({"chat_id": chat_id}, {"$set": {"season": season}}, upsert=True)
-    await app.send_message(chat_id, f"Season set to: {season}")
+    season = message.text.split()[1]
+    if season.lower() == "{season}":
+        global_settings_collection.update_one({"_id": "config"}, {"$unset": {"season": ""}}, upsert=True)
+        await app.send_message(chat_id, "Season reset to fetch from Anilist.")
+    else:
+        global_settings_collection.update_one({"_id": "config"}, {"$set": {"season": season}}, upsert=True)
+        await app.send_message(chat_id, f"Season set to: {season}")
 
 @app.on_message(filters.command("connectnews"))
 async def connect_news(client, message):
