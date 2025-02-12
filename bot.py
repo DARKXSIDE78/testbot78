@@ -91,14 +91,16 @@ async def anime(client, message):
 async def manga(client, message):
     chat_id = message.chat.id
     user_setting = user_settings_collection.find_one({"chat_id": chat_id}) or {}
-    main_channel = user_setting.get('manga_channel', None)
+    manga_channel = (global_settings_collection.find_one({"_id": "config"}) or {}).get("manga_channel", "GenMangaOfc")  # ✅ Fetch manga_channel
+    chapters = user_setting.get("chapters", None)  
 
     if len(message.text.split()) == 1:
         await app.send_message(chat_id, "**Please provide a manga name.**")
         return
 
     manga_name = " ".join(message.text.split()[1:])
-    template, cover_image = await get_manga_data(manga_name)
+    template, cover_image = await get_manga_data(manga_name, chapters, manga_channel)  # ✅ Pass manga_channel & chapters
+
     await send_message_to_user(chat_id, template, cover_image)
 
 @app.on_message(filters.command("setchapters"))
