@@ -93,6 +93,8 @@ async def manga(client, message):
     user_setting = user_settings_collection.find_one({"chat_id": chat_id}) or {}
     chapters = user_setting.get("chapters", None)  
 
+    global_settings_collection = db["Manga"]  # Ensure this is your MongoDB collection
+    manga_channel = (global_settings_collection.find_one({'_id': 'config'}) or {}).get('manga_channel', '@FraxxManga')
     if len(message.text.split()) == 1:
         await app.send_message(chat_id, "**Please provide a manga name.**")
         return
