@@ -7,7 +7,10 @@ import threading
 import pymongo
 import feedparser
 from config import API_ID, API_HASH, BOT_TOKEN, URL_A, URL_B, START_PIC, ANILIST_API_URL, MONGO_URI
+
 from webhook import start_webhook
+
+from template.anilist import get_anime_data, send_message_to_user
 
 
 mongo_client = pymongo.MongoClient(MONGO_URI)
@@ -25,129 +28,6 @@ webhook_thread.start()
 
 async def escape_markdown_v2(text: str) -> str:
     return text
-
-async def get_poster(anime_id: int = None):
-    if anime_id:
-        return f"https://img.anili.st/media/{anime_id}"
-    return "https://envs.sh/YsH.jpg"
-
-async def get_anime_data(anime_name: str, language: str, subtitle: str, season: str):
-    query = '''
-   query ($id: Int, $search: String, $seasonYear: Int) {
-  Media(id: $id, type: ANIME, format_not_in: [MOVIE, MUSIC, MANGA, NOVEL, ONE_SHOT], search: $search, seasonYear: $seasonYear) {
-    id
-    idMal
-    title {
-      romaji
-      english
-      native
-    }
-    type
-    format
-    status(version: 2)
-    description(asHtml: false)
-    startDate {
-      year
-      month
-      day
-    }
-    endDate {
-      year
-      month
-      day
-    }
-    season
-    seasonYear
-    episodes
-    duration
-    chapters
-    volumes
-    countryOfOrigin
-    source
-    hashtag
-    trailer {
-      id
-      site
-      thumbnail
-    }
-    updatedAt
-    coverImage {
-      large
-    }
-    bannerImage
-    genres
-    synonyms
-    averageScore
-    meanScore
-    popularity
-    trending
-    favourites
-    studios {
-      nodes {
-         name
-         siteUrl
-      }
-    }
-    isAdult
-    nextAiringEpisode {
-      airingAt
-      timeUntilAiring
-      episode
-    }
-    airingSchedule {
-      edges {
-        node {
-          airingAt
-          timeUntilAiring
-          episode
-        }
-      }
-    }
-    externalLinks {
-      url
-      site
-    }
-    siteUrl
-  }
-}
-    '''
-    variables = {'search': anime_name}
-
-    async with aiohttp.ClientSession() as session:
-        try:
-            async with session.post(ANILIST_API_URL, json={'query': query, 'variables': variables}, timeout=10) as response:
-                data = await response.json()
-                if "data" in data and "Media" in data["data"]:
-                    anime = data["data"]["Media"]
-                    title = anime["title"]["english"] or anime["title"]["romaji"]
-                    season = anime["season"] if not season else season
-                    episodes = anime["episodes"]
-                    genres = ', '.join(anime["genres"])
-                    average_score = anime["averageScore"]
-                    anime_id = anime.get("id")
-                    main_hub = (global_settings_collection.find_one({'_id': 'config'}) or {}).get('main_hub', 'GenAnimeOfc')
-                    
-                    poster_url = await get_poster(anime_id)
-
-                    template = f"""
-**{title}**
-**──────────────────**
-**➢ Season:** **{season}**
-**➢ Episodes:** **{episodes}**
-**➢ Audio:** **{language}**
-**➢ Subtitle:** **{subtitle}**
-**➢ Genres:** **{genres}**
-**➢ Rating:** **{average_score}%**
-**──────────────────**
-**Main Hub:** **{main_hub}**
-"""
-                    return template, poster_url
-                else:
-                    return "Anime not found. Please check the name and try again.", "https://envs.sh/YsH.jpg"
-        except asyncio.TimeoutError:
-            return "The request timed out. Please try again later.", "https://envs.sh/YsH.jpg"
-        except Exception as e:
-            return f"An error occurred: {str(e)}", "https://envs.sh/YsH.jpg"
 
 async def send_message_to_user(chat_id: int, message: str, image_url: str = None):
     try:
@@ -202,9 +82,8 @@ async def anime(client, message):
         return
 
     anime_name = " ".join(message.text.split()[1:])
-    template, cover_image = await get_anime_data(anime_name, language, subtitle, season)
-    safe_template = await escape_markdown_v2(template)
-    await send_message_to_user(chat_id, safe_template, cover_image)
+    template, cover_image = await get_anime_data(anime_name, language, subtitle, season, global_settings_collection)
+    await send_message_to_user(app, chat_id, template, cover_image)
 
 @app.on_message(filters.command("setlang"))
 async def set_language(client, message):
