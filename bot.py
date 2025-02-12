@@ -79,34 +79,29 @@ async def anime(client, message):
     user_setting = user_settings_collection.find_one({"chat_id": chat_id}) or {}
     language = user_setting.get('language', 'Dual')
     subtitle = user_setting.get('subtitle', 'English')
-    season = user_setting.get('season', None)
+    season = user_setting.get('season')
 
     if len(message.text.split()) == 1:
-        await app.send_message(chat_id, "**Please provide an anime name.**")
+        await client.send_message(chat_id, "**Please provide an anime name.**")
         return
 
     anime_name = " ".join(message.text.split()[1:])
     template, cover_image = await get_anime_data(global_settings_collection, anime_name, language, subtitle, season)
-    await send_message_to_user(chat_id, template, cover_image)
+    await send_message_to_user(client, chat_id, template, cover_image)
 
 @app.on_message(filters.command("manga"))
 async def manga(client, message):
     chat_id = message.chat.id
-
     user_setting = user_settings_collection.find_one({"chat_id": chat_id}) or {}
-    chapters = user_setting.get("chapters", None)  
+    chapters = user_setting.get("chapters")
 
     if len(message.text.split()) == 1:
         await client.send_message(chat_id, "**Please provide a manga name.**")
         return
 
     manga_name = " ".join(message.text.split()[1:])
-
-    # Fetch manga_channel from global settings
     manga_channel = (manga_settings_collection.find_one({'_id': 'config'}) or {}).get('manga_channel', '@FraxxManga')
-
     template, cover_image = await get_manga_data(manga_name, chapters, manga_channel)
-
     await send_message_to_user(client, chat_id, template, cover_image)
 
 @app.on_message(filters.command("setchapters"))
@@ -129,7 +124,7 @@ async def set_chapters(client, message):
 async def set_manga_channel(client, message):
     chat_id = message.chat.id
     if len(message.text.split()) == 1:
-        current = (global_settings_collection.find_one({"_id": "config"}) or {}).get("manga_channel", "No channel set")
+        current = (manga_settings_collection.find_one({"_id": "config"}) or {}).get("manga_channel", "No channel set")
         await client.send_message(chat_id, f"Current Manga Channel: {current}")
         return
 
