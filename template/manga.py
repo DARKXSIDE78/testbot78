@@ -1,9 +1,8 @@
 import aiohttp
 import asyncio
-from pyrogram import Client, filters
 from config import ANILIST_API_URL
 
-async def get_manga_data(manga_name: str, chapters: str):
+async def get_manga_data(manga_name: str, chapters: str, main_hub: str):
     query = '''
     query ($search: String) {
       Media(type: MANGA, search: $search) {
@@ -27,6 +26,9 @@ async def get_manga_data(manga_name: str, chapters: str):
         volumes
         chapters
         genres
+        coverImage {
+          large
+        }
         siteUrl
       }
     }
@@ -46,7 +48,7 @@ async def get_manga_data(manga_name: str, chapters: str):
                     volumes = manga["volumes"] or "N/A"
                     chapters = chapters if chapters else (manga["chapters"] or "N/A")
                     genres = ', '.join(manga["genres"])
-                    main_hub = (global_settings_collection.find_one({'_id': 'config'}) or {}).get('main_hub', 'GenMangaOfc')
+                    cover_image = manga["coverImage"]["large"]  # ✅ Fetch cover image
                     
                     template = f"""
 **{title}**
@@ -60,52 +62,10 @@ async def get_manga_data(manga_name: str, chapters: str):
 **➢ Genres:** **{genres}**
 **──────────────────**
 **Main Hub:** **{main_hub}**"""
-                    return template
+                    return template, cover_image  # ✅ Correct return statement
                 else:
-                    return "Manga not found. Please check the name and try again."
+                    return "Manga not found. Please check the name and try again.", None
         except asyncio.TimeoutError:
-            return "The request timed out. Please try again later."
+            return "The request timed out. Please try again later.", None
         except Exception as e:
-            return f"An error occurred: {str(e)}"
-
-@app.on_message(filters.command("manga"))
-async def manga(client, message):
-    chat_id = message.chat.id
-    user_setting = user_settings_collection.find_one({"chat_id": chat_id}) or {}
-    chapters = user_setting.get('chapters', None)
-
-    if len(message.text.split()) == 1:
-        await app.send_message(chat_id, "**Please provide a manga name.**")
-        return
-
-    manga_name = " ".join(message.text.split()[1:])
-    template = await get_manga_data(manga_name, chapters)
-    await app.send_message(chat_id, template)
-
-@app.on_message(filters.command("setchapters"))
-async def set_chapters(client, message):
-    chat_id = message.chat.id
-    if len(message.text.split()) == 1:
-        current = (user_settings_collection.find_one({"chat_id": chat_id}) or {}).get("chapters", "Fetching from Anilist")
-        await app.send_message(chat_id, f"Current chapter setting is: {current}")
-        return
-
-    chapters = message.text.split()[1]
-    if chapters.lower() == "{chapters}":
-        user_settings_collection.update_one({"chat_id": chat_id}, {"$unset": {"chapters": ""}}, upsert=True)
-        await app.send_message(chat_id, "Chapters reset to fetch from Anilist.")
-    else:
-        user_settings_collection.update_one({"chat_id": chat_id}, {"$set": {"chapters": chapters}}, upsert=True)
-        await app.send_message(chat_id, f"Chapters set to: {chapters}")
-
-@app.on_message(filters.command("setmangachannel"))
-async def set_manga_channel(client, message):
-    chat_id = message.chat.id
-    if len(message.text.split()) == 1:
-        current = (global_settings_collection.find_one({"_id": "config"}) or {}).get("manga_hub", "GenMangaOfc")
-        await app.send_message(chat_id, f"Current Manga Hub is: {current}")
-        return
-
-    manga_hub = " ".join(message.text.split()[1:])
-    global_settings_collection.update_one({"_id": "config"}, {"$set": {"manga_hub": manga_hub}}, upsert=True)
-    await app.send_message(chat_id, f"Manga Hub set to: {manga_hub}")
+            return f"An error occurred: {str(e)}", None
