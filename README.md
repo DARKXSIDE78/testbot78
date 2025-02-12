@@ -3,7 +3,7 @@ A Telegram Bot Repo Capable of doing the following Tasks.
 * Fetch Anime News from [Crunchyroll](https://feeds.feedburner.com/crunchyroll/rss)
 * Fetch Anime News from [TheAnimeDaily](https://www.theanimedaily.com/feed/)
 * Create Anime Template for Posting Anime.
-* Create Manga Template for Posting Manga [Soon]
+* Create Manga Template for Posting Manga.
 * Encode Video V1 [Soon]
 * Encode Video V2 (Send one video it will encode it in 3 quality 480p, 720p, 1080p) [Soon]
 * Download Anime [Soon]
@@ -22,11 +22,14 @@ A Telegram Bot Repo Capable of doing the following Tasks.
 ## Available Cmds
 ```
  /start - Start the bot
- /setlang - Set language for the template [E.G. Dual, Sub, Sub, etc.]
- /setsubtitle - Set Subtitle for the template [E.G. English, Hindi, Multi, etc.]
- /setchannel - Set Channel name for the template [E.G. @GenAnimeOfc.]
  /anime - To Generate an anime template
+ /manga - To Generate manga template
  /connectnews - To Connect a channel where news will be posted [/connectnews <channel id or username with @>]
+ /setlang - Set language for anime template [E.G. Dual, Sub, Sub, etc.]
+ /setsubtitle - Set Subtitle for anime template [E.G. English, Hindi, Multi, etc.]
+ /setchapters - Set Manga chapters for manga template [E.G. /setchapter <number example 67 or {chatpers} to fetch chapters from anilist>]
+ /setchannel - Set Channel name for anime template [E.G. @GenAnimeOfc.]
+ /setmangachannel - Set Channel name for manga template [E.G. @FraxxManga.]
 ```
 
 
