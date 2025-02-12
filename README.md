@@ -1,6 +1,7 @@
 A Telegram Bot Repo Capable of doing the following Tasks.
 * Fetch Anime News from [MyAnimeList](https://myanimelist.net)
-* Fetch Anime News from [LiveChart](https://livechart.me)
+* Fetch Anime News from [Crunchyroll](https://feeds.feedburner.com/crunchyroll/rss)
+* Fetch Anime News from [TheAnimeDaily](https://www.theanimedaily.com/feed/)
 * Create Anime Template for Posting Anime.
 * Create Manga Template for Posting Manga [Soon]
 * Encode Video V1 [Soon]
