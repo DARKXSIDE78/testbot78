@@ -85,7 +85,7 @@ async def anime(client, message):
 
     anime_name = " ".join(message.text.split()[1:])
     template, cover_image = await get_anime_data(anime_name, language, subtitle, season)
-    await send_message_to_user(app, chat_id, template, cover_image)
+    await send_message_to_user(global_settings_collection, app, chat_id, template, cover_image)
 
 @app.on_message(filters.command("manga"))
 async def manga(client, message):
@@ -101,7 +101,7 @@ async def manga(client, message):
     manga_name = " ".join(message.text.split()[1:])
     template, cover_image = await get_manga_data(manga_name, chapters, manga_channel)  # ✅ Pass manga_channel & chapters
 
-    await send_message_to_user(chat_id, template, cover_image)
+    await send_message_to_user(global_settings_collection, app,chat_id, template, cover_image)
 
 @app.on_message(filters.command("setchapters"))
 async def set_chapters(client, message):
