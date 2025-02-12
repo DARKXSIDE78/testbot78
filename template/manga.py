@@ -1,3 +1,7 @@
+import aiohttp
+import asyncio
+from config import ANILIST_API_URL  # Ensure this exists
+
 async def get_manga_data(manga_name: str, chapters: str, manga_channel: str):
     """Fetches manga details from Anilist API."""
     
@@ -33,15 +37,19 @@ async def get_manga_data(manga_name: str, chapters: str, manga_channel: str):
                     manga = data["data"]["Media"]
                     title = manga["title"]["english"] or manga["title"]["romaji"]
                     status = manga["status"].replace("FINISHED", "Completed").replace("RELEASING", "Ongoing")
+                    
+                    # Handle Start & End Dates
                     start_date = f"{manga['startDate']['year']}-{manga['startDate']['month']}-{manga['startDate']['day']}"
-                    end_date = f"{manga['endDate']['year']}-{manga['endDate']['month']}-{manga['endDate']['day']}" if manga['endDate']['year'] else "Ongoing"
-                    volumes = manga["volumes"] or "N/A"
-                    chapters = chapters if chapters else (manga["chapters"] or "N/A")
-                    genres = ', '.join(manga["genres"])
-                    manga_id = manga.get("id")
+                    end_date = (
+                        f"{manga['endDate']['year']}-{manga['endDate']['month']}-{manga['endDate']['day']}"
+                        if manga['endDate'] and manga['endDate']['year'] else "Ongoing"
+                    )
 
-                    # Fetch Poster Image
-                    poster_url = await get_poster(manga_id)
+                    volumes = manga["volumes"] or "N/A"
+                    fetched_chapters = manga["chapters"] or "N/A"
+                    chapters = chapters if chapters else fetched_chapters
+                    genres = ', '.join(manga["genres"]) if manga["genres"] else "N/A"
+                    cover_image = manga["coverImage"]["large"]
 
                     template = f"""
 **{title}**
@@ -56,7 +64,7 @@ async def get_manga_data(manga_name: str, chapters: str, manga_channel: str):
 **──────────────────**
 **Manga Channel:** **{manga_channel}**
 """
-                    return template, poster_url  
+                    return template, cover_image  
                 else:
                     return "Manga not found. Please check the name and try again.", "https://envs.sh/YsH.jpg"
         
