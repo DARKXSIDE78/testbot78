@@ -9,7 +9,7 @@ A Telegram Bot Repo Capable of doing the following Tasks.
 * Download Manga [Soon]
 <h3>You can use this to Create a anime news channel. It fetches anime news from anilist and livechart and posts it on your Channel or Group.</b></h3>
 
-<img src='https://images8.alphacoders.com/138/1384114.png'>
+<img src='https://images8.alphacoders.com/138/1384114.png'> <img src='https://motionbgs.com/media/5511/isagi-yoichi-devil-eyes.jpg'>
 
 ## Requirements
 * Python3
