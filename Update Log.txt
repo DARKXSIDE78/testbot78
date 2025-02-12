@@ -25,3 +25,9 @@ V2.11:
 - Updated Code.
 - Added /setseason to get back default [E.G. /setseason {season} to fetch from anilist again].
 - Fixed /setchannel command.
+
+V2.11.2:
+
+- Optimised Code.
+- Added important values to config.py.
+- Added webhook for koyeb, render, etc.
