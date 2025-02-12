@@ -11,6 +11,7 @@ from config import API_ID, API_HASH, BOT_TOKEN, URL_A, URL_B, START_PIC, ANILIST
 from webhook import start_webhook
 
 from template.anilist import get_anime_data, send_message_to_user
+from modules.rss.rss import news_feed_loop
 
 
 mongo_client = pymongo.MongoClient(MONGO_URI)
@@ -148,67 +149,13 @@ async def connect_news(client, message):
     global_settings_collection.update_one({"_id": "config"}, {"$set": {"news_channel": channel}}, upsert=True)
     await app.send_message(chat_id, f"News channel set to: @{channel}")
 
-##############################
-# Background News Feed Functionality
-##############################
-sent_news_entries = set()  # In-memory store of sent entry IDs; consider persisting this if needed.
 
-async def fetch_and_send_news():
-    config = global_settings_collection.find_one({"_id": "config"})
-    if not config or "news_channel" not in config:
-        return
-
-    news_channel = "@" + config["news_channel"]
-
-    for url in [URL_A, URL_B]:
-        feed = await asyncio.to_thread(feedparser.parse, url)
-
-        # Reverse the feed entries to send from last to first
-        entries = list(feed.entries)[::-1]
-
-        for entry in entries:
-            entry_id = entry.get('id', entry.get('link'))
-            
-            # Check if entry is already in MongoDB to avoid duplicates
-            if not db.sent_news.find_one({"entry_id": entry_id}):
-                sent_news_entries.add(entry_id)
-                
-                # Extract thumbnail if available
-                thumbnail_url = None
-                if 'media_thumbnail' in entry:
-                    thumbnail_url = entry.media_thumbnail[0]['url']
-                
-                msg = f"<b>**{entry.title}**</b>\n"
-                
-                # Add summary if available
-                if 'summary' in entry:
-                    msg += f"\n{entry.summary}"
-                
-                msg += f"\n\n<a href='{entry.link}'>Read more</a>"
-
-                try:
-                    await asyncio.sleep(15)  # Adding a delay before sending
-                    
-                    if thumbnail_url:
-                        await app.send_photo(chat_id=news_channel, photo=thumbnail_url, caption=msg)
-                    else:
-                        await app.send_message(chat_id=news_channel, text=msg)
-                    
-                    # Store sent entry in MongoDB to prevent duplication
-                    db.sent_news.insert_one({"entry_id": entry_id, "title": entry.title, "link": entry.link})
-                    print(f"Sent news: {entry.title}")
-                except Exception as e:
-                    print(f"Error sending news message: {e}")
-
-async def news_feed_loop():
-    while True:
-        await fetch_and_send_news()
-        await asyncio.sleep(10)
+sent_news_entries = set()
 
 async def main():
     await app.start()
     print("Bot is running...")
-    asyncio.create_task(news_feed_loop())
+    asyncio.create_task(news_feed_loop(app, db, global_settings_collection, [URL_A, URL_B]))
     await asyncio.Event().wait()
 
 if __name__ == '__main__':
