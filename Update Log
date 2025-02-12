@@ -31,3 +31,11 @@ V2.11.2:
 - Optimised Code.
 - Added important values to config.py.
 - Added webhook for koyeb, render, etc.
+
+V3:
+
+- Added Manga Template Generator.
+- Added /manga to fetch manga.
+- Added /setmangachannel to set manga template channel.
+- Added /setchapters to set chapter on your own in manga template [E.G. /setchapters 67 or /setchapters {chapters} to fetch from anilist].
+- Code Optimised.
