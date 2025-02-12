@@ -1,21 +1,27 @@
 V1:
 
-Added Template Generator.
-Added /setlang, /setchannel, /setsubtitle, /encall, /enccode, etc...
-FFmpeg Encoder to encode video in multiple quality 480p,720p,1080p.
+- Added Template Generator.
+- Added /setlang, /setchannel, /setsubtitle, /encall, /encodec, etc...
+- FFmpeg Encoder to encode video in multiple quality 480p,720p,1080p.
 
 V2:
 
-Removed FFmpeg Encoder [ERROR].
-Removed FFmpeg related commands.
-Added News Fetcher and RSS.
-Added /connectnews command to connect news channel.
+- Removed FFmpeg Encoder [ERROR].
+- Removed FFmpeg related commands.
+- Added News Fetcher and RSS.
+- Added /connectnews command to connect news channel.
 
 V2.05:
 
-Added Delay in News Fetcher.
-Added Thumbnail extractor from RSS.
+- Added Delay in News Fetcher.
+- Added Thumbnail extractor from RSS.
 
 V2.10:
 
-Added Context Fetcher.
+- Added Context Fetcher.
+
+V2.11:
+
+- Updated Code.
+- Added /setseason to get back default [E.G. /setseason {season} to fetch from anilist again].
+- Fixed /setchannel command.
