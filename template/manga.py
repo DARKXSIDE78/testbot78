@@ -73,9 +73,6 @@ async def get_manga_data(manga_name: str, chapters: str, global_settings_collect
         
         except asyncio.TimeoutError:
             return "The request timed out. Please try again later.", "https://envs.sh/YsH.jpg"
-        
-        except Exception as e:
-            return f"An error occurred: {str(e)}", "https://envs.sh/YsH.jpg"
 
 async def send_message_to_user(app: Client, chat_id: int, message: str, image_url: str = None):
     """Sends a message or image with a caption to a Telegram user."""
