@@ -47,17 +47,19 @@ async def get_manga_data(manga_name: str, language: str, global_settings_collect
                 
                 if "data" in data and "Media" in data["data"]:
                     manga = data["data"]["Media"]
-                    title = manga["title"]["english"] or manga["title"]["romaji"]
-                    status = manga["status"]
-                    start_date = f"{manga['startDate']['year']}-{manga['startDate']['month']:02d}-{manga['startDate']['day']:02d}" if manga["startDate"] else "Unknown"
-                    end_date = "Ongoing" if not manga["endDate"] else f"{manga['endDate']['year']}-{manga['endDate']['month']:02d}-{manga['endDate']['day']:02d}"
-                    volumes = manga["volumes"] if manga["volumes"] else "N/A"
-                    chapters = manga["chapters"] if manga["chapters"] else "N/A"
-                    genres = ', '.join(manga["genres"]) if manga["genres"] else "N/A"
+                    title = manga["title"]["english"] or manga["title"]["romaji"] or manga["title"]["native"]
+                    status = manga["status"] or "Unknown"
+                    start_date = (f"{manga['startDate']['year']}-{manga['startDate']['month']:02d}-{manga['startDate']['day']:02d}"
+                                  if manga.get("startDate") else "N/A")
+                    end_date = (f"{manga['endDate']['year']}-{manga['endDate']['month']:02d}-{manga['endDate']['day']:02d}"
+                                if manga.get("endDate") else "Null")
+                    volumes = manga.get("volumes", "N/A")
+                    chapters = manga.get("chapters", "N/A")
+                    genres = ', '.join(manga["genres"]) if manga.get("genres") else "N/A"
                     manga_id = manga.get("id")
 
                     # Fetch Manga Hub from Global Config
-                    manga_hub = (global_settings_collection.find_one({'_id': 'config'}) or {}).get('manga_hub', 'FraxxManga')
+                    manga_hub = (global_settings_collection.find_one({'_id': 'config'}) or {}).get('manga_hub', '@FraxxManga')
 
                     cover_url = await get_manga_cover(manga_id)
 
