@@ -98,7 +98,7 @@ async def manga(client, message):
         return
 
     manga_name = " ".join(message.text.split()[1:])
-    template, cover_image = await get_manga_data(manga_name, chapters, manga_hub, global_settings_collection)
+    template, cover_image = await get_manga_data(manga_name, chapters, global_settings_collection)
     await send_message_to_user_manga(chat_id, template, cover_image)
 
 @app.on_message(filters.command("setlang"))
