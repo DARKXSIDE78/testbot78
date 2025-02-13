@@ -57,7 +57,7 @@ async def start(client, message):
         ],
     ])
 
-    photo_url = start_pic
+    photo_url = START_PIC
 
     await app.send_photo(
         chat_id, 
