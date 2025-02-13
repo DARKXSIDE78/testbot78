@@ -47,18 +47,25 @@ async def get_manga_data(manga_name: str, language: str, global_settings_collect
                 
                 if "data" in data and "Media" in data["data"]:
                     manga = data["data"]["Media"]
-                    title = manga["title"]["english"] or manga["title"]["romaji"] or manga["title"]["native"]
-                    status = manga["status"] or "Unknown"
+                    
+                    # Safe fetching for title, fall back to empty string if None
+                    title = manga["title"]["english"] or manga["title"]["romaji"] or manga["title"]["native"] or "Unknown Title"
+                    
+                    # Safe formatting for dates, fall back to "Unknown" if None
                     start_date = (f"{manga['startDate']['year']}-{manga['startDate']['month']:02d}-{manga['startDate']['day']:02d}"
-                                  if manga.get("startDate") else "N/A")
+                                  if manga.get("startDate") else "Unknown")
                     end_date = (f"{manga['endDate']['year']}-{manga['endDate']['month']:02d}-{manga['endDate']['day']:02d}"
-                                if manga.get("endDate") else "Null")
+                                if manga.get("endDate") else "Ongoing")
+                    
+                    # Safe fetching for volumes and chapters, fall back to "N/A" if None
                     volumes = manga.get("volumes", "N/A")
                     chapters = manga.get("chapters", "N/A")
+                    
+                    # Safe fetching for genres, fall back to "N/A" if None
                     genres = ', '.join(manga["genres"]) if manga.get("genres") else "N/A"
+                    
                     manga_id = manga.get("id")
 
-                    # Fetch Manga Hub from Global Config
                     manga_hub = (global_settings_collection.find_one({'_id': 'config'}) or {}).get('manga_hub', '@FraxxManga')
 
                     cover_url = await get_manga_cover(manga_id)
@@ -67,7 +74,7 @@ async def get_manga_data(manga_name: str, language: str, global_settings_collect
 **{title}**
 **──────────────────**
 **➢ Type:** **Manga**
-**➢ Status:** **{status}**
+**➢ Status:** **{status if status else 'Unknown'}**
 **➢ Start Date:** **{start_date}**
 **➢ End Date:** **{end_date}**
 **➢ Volumes:** **{volumes}**
