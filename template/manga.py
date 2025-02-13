@@ -52,10 +52,17 @@ async def get_manga_data(manga_name: str, language: str, global_settings_collect
                     title = manga["title"]["english"] or manga["title"]["romaji"] or manga["title"]["native"] or "None"
                     
                     # Safe formatting for dates, fall back to "Unknown" if None
-                    start_date = (f"{manga['startDate']['year']}-{manga['startDate']['month']:02d}-{manga['startDate']['day']:02d}"
-                                  if manga.get("startDate") else "Null")
-                    end_date = (f"{manga['endDate']['year']}-{manga['endDate']['month']:02d}-{manga['endDate']['day']:02d}"
-                                if manga.get("endDate") else "Null")
+                    start_date = (
+                        f"{manga['startDate']['year']}-{manga['startDate']['month']:02d}-{manga['startDate']['day']:02d}"
+                        if manga.get("startDate") and None not in [manga['startDate'].get('year'), manga['startDate'].get('month'), manga['startDate'].get('day')]
+                        else "Null"
+                    )
+
+                    end_date = (
+                        f"{manga['endDate']['year']}-{manga['endDate']['month']:02d}-{manga['endDate']['day']:02d}"
+                        if manga.get("endDate") and None not in [manga['endDate'].get('year'), manga['endDate'].get('month'), manga['endDate'].get('day')]
+                        else "Null"
+                    )
                     
                     # Safe fetching for volumes and chapters, fall back to "N/A" if None
                     volumes = manga.get("volumes", "N/A")
