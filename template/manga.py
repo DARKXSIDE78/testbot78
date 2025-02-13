@@ -1,162 +1,95 @@
 import aiohttp
 import asyncio
-from pyrogram import Client, filters
-from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
-import subprocess
-import threading
-import pymongo
-import feedparser
-from config import API_ID, API_HASH, BOT_TOKEN, URL_A, URL_B, START_PIC, ANILIST_API_URL, MONGO_URI
+from config import ANILIST_API_URL
+from pyrogram import Client
 
-from webhook import start_webhook
+async def get_manga_cover(manga_id: int = None):
+    """Fetches the cover URL for a manga based on its Anilist ID."""
+    return f"https://img.anili.st/media/{manga_id}" if manga_id else "https://envs.sh/YsH.jpg"
 
-from template.anilist import get_anime_data, send_message_to_user
-from modules.rss.rss import news_feed_loop
+async def get_manga_data(manga_name: str, language: str, global_settings_collection):
+    """Fetches manga details from Anilist API."""
+    
+    query = '''
+    query ($id: Int, $search: String) {
+      Media(id: $id, type: MANGA, search: $search) {
+        id
+        idMal
+        title {
+          romaji
+          english
+          native
+        }
+        type
+        status(version: 2)
+        startDate { year month day }
+        endDate { year month day }
+        volumes
+        chapters
+        genres
+        averageScore
+        meanScore
+        popularity
+        trending
+        favourites
+        externalLinks { url site }
+        siteUrl
+      }
+    }
+    '''
+    
+    variables = {'search': manga_name}
 
+    async with aiohttp.ClientSession() as session:
+        try:
+            async with session.post(ANILIST_API_URL, json={'query': query, 'variables': variables}, timeout=10) as response:
+                data = await response.json()
+                
+                if "data" in data and "Media" in data["data"]:
+                    manga = data["data"]["Media"]
+                    title = manga["title"]["english"] or manga["title"]["romaji"]
+                    status = manga["status"]
+                    start_date = f"{manga['startDate']['year']}-{manga['startDate']['month']:02d}-{manga['startDate']['day']:02d}" if manga["startDate"] else "Unknown"
+                    end_date = "Ongoing" if not manga["endDate"] else f"{manga['endDate']['year']}-{manga['endDate']['month']:02d}-{manga['endDate']['day']:02d}"
+                    volumes = manga["volumes"] if manga["volumes"] else "N/A"
+                    chapters = manga["chapters"] if manga["chapters"] else "N/A"
+                    genres = ', '.join(manga["genres"]) if manga["genres"] else "N/A"
+                    manga_id = manga.get("id")
 
-mongo_client = pymongo.MongoClient(MONGO_URI)
-db = mongo_client["telegram_bot_db"]
-user_settings_collection = db["user_settings"]
-global_settings_collection = db["global_settings"]
+                    # Fetch Manga Hub from Global Config
+                    manga_hub = (global_settings_collection.find_one({'_id': 'config'}) or {}).get('manga_hub', 'GenMangaOfc')
 
+                    cover_url = await get_manga_cover(manga_id)
 
-app = Client("GenToolBot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
+                    template = f"""
+**{title}**
+**──────────────────**
+**➢ Type:** **Manga**
+**➢ Status:** **{status}**
+**➢ Start Date:** **{start_date}**
+**➢ End Date:** **{end_date}**
+**➢ Volumes:** **{volumes}**
+**➢ Chapters:** **{chapters}**
+**➢ Genres:** **{genres}**
+**──────────────────**
+**Manga Hub:** **{manga_hub}**
+"""
+                    return template, cover_url
+                else:
+                    return "Manga not found. Please check the name and try again.", "https://envs.sh/YsH.jpg"
+        
+        except asyncio.TimeoutError:
+            return "The request timed out. Please try again later.", "https://envs.sh/YsH.jpg"
+        
+        except Exception as e:
+            return f"An error occurred: {str(e)}", "https://envs.sh/YsH.jpg"
 
-
-webhook_thread = threading.Thread(target=start_webhook, daemon=True)
-webhook_thread.start()
-
-
-async def escape_markdown_v2(text: str) -> str:
-    return text
-
-async def send_message_to_user(chat_id: int, message: str, image_url: str = None):
+async def send_message_to_user(app: Client, chat_id: int, message: str, image_url: str = None):
+    """Sends a message or image with caption to a Telegram user."""
     try:
         if image_url:
-            await app.send_photo(
-                chat_id, 
-                image_url,
-                caption=message,
-            )
+            await app.send_photo(chat_id, image_url, caption=message)
         else:
             await app.send_message(chat_id, message)
     except Exception as e:
         print(f"Error sending message: {e}")
-
-@app.on_message(filters.command("start"))
-async def start(client, message):
-    chat_id = message.chat.id
-    buttons = InlineKeyboardMarkup([
-        [
-            InlineKeyboardButton("ᴍᴀɪɴ ʜᴜʙ", url="https://t.me/GenAnimeOfc"),
-            InlineKeyboardButton("ꜱᴜᴩᴩᴏʀᴛ ᴄʜᴀɴɴᴇʟ", url="https://t.me/+z05NzRmuqjBkYTdl"),
-        ],
-        [
-            InlineKeyboardButton("ᴅᴇᴠᴇʟᴏᴩᴇʀ", url="https://t.me/darkxside78"),
-        ],
-    ])
-
-    photo_url = start_pic
-
-    await app.send_photo(
-        chat_id, 
-        photo_url,
-        caption=(
-            f"**ʙᴀᴋᴋᴀᴀᴀ {message.from_user.first_name}!!!**\n"
-            f"**ɪ ᴀᴍ ᴀɴ ᴀɴɪᴍᴇ ᴜᴩʟᴏᴀᴅ ᴛᴏᴏʟ ʙᴏᴛ.**\n"
-            f"**ɪ ᴡᴀs ᴄʀᴇᴀᴛᴇᴅ ᴛᴏ ᴍᴀᴋᴇ ᴀɴɪᴍᴇ ᴜᴩʟᴏᴀᴅᴇʀ's ʟɪғᴇ ᴇᴀsɪᴇʀ...**\n"
-            f"**ɪ ᴀᴍ sᴛɪʟʟ ɪɴ ʙᴇᴛᴀ ᴛᴇsᴛɪɴɢ ᴠᴇʀsɪᴏɴ...**"
-        ),
-        reply_markup=buttons
-    )
-
-@app.on_message(filters.command("anime"))
-async def anime(client, message):
-    chat_id = message.chat.id
-    user_setting = user_settings_collection.find_one({"chat_id": chat_id}) or {}
-    language = user_setting.get('language', 'Dual')
-    subtitle = user_setting.get('subtitle', 'English')
-    season = user_setting.get('season', None)
-
-    if len(message.text.split()) == 1:
-        await app.send_message(chat_id, "**Please provide an anime name.**")
-        return
-
-    anime_name = " ".join(message.text.split()[1:])
-    template, cover_image = await get_anime_data(anime_name, language, subtitle, season)
-    await send_message_to_user(app, chat_id, template, cover_image)
-
-@app.on_message(filters.command("setlang"))
-async def set_language(client, message):
-    chat_id = message.chat.id
-    if len(message.text.split()) == 1:
-        current = (user_settings_collection.find_one({"chat_id": chat_id}) or {}).get("language", "Dual")
-        await app.send_message(chat_id, f"Current language is: {current}")
-        return
-
-    language = " ".join(message.text.split()[1:])
-    user_settings_collection.update_one({"chat_id": chat_id}, {"$set": {"language": language}}, upsert=True)
-    await app.send_message(chat_id, f"Language set to: {language}")
-
-@app.on_message(filters.command("setchannel"))
-async def set_main_hub(client, message):
-    chat_id = message.chat.id
-    if len(message.text.split()) == 1:
-        current = (global_settings_collection.find_one({"_id": "config"}) or {}).get("main_hub", "GenAnimeOfc")
-        await app.send_message(chat_id, f"Current Main Hub is: {current}")
-        return
-
-    main_hub = " ".join(message.text.split()[1:])
-    global_settings_collection.update_one({"_id": "config"}, {"$set": {"main_hub": main_hub}}, upsert=True)
-    await app.send_message(chat_id, f"Main Hub set to: {main_hub}")
-
-@app.on_message(filters.command("setsubtitle"))
-async def set_subtitle(client, message):
-    chat_id = message.chat.id
-    if len(message.text.split()) == 1:
-        current = (user_settings_collection.find_one({"chat_id": chat_id}) or {}).get("subtitle", "English")
-        await app.send_message(chat_id, f"Current subtitle is: {current}")
-        return
-
-    subtitle = " ".join(message.text.split()[1:])
-    user_settings_collection.update_one({"chat_id": chat_id}, {"$set": {"subtitle": subtitle}}, upsert=True)
-    await app.send_message(chat_id, f"Subtitle language set to: {subtitle}")
-
-@app.on_message(filters.command("setseason"))
-async def set_season(client, message):
-    chat_id = message.chat.id
-    if len(message.text.split()) == 1:
-        current = (global_settings_collection.find_one({"_id": "config"}) or {}).get("season", "Default Season")
-        await app.send_message(chat_id, f"Current season is: {current}")
-        return
-
-    season = message.text.split()[1]
-    if season.lower() == "{season}":
-        global_settings_collection.update_one({"_id": "config"}, {"$unset": {"season": ""}}, upsert=True)
-        await app.send_message(chat_id, "Season reset to fetch from Anilist.")
-    else:
-        global_settings_collection.update_one({"_id": "config"}, {"$set": {"season": season}}, upsert=True)
-        await app.send_message(chat_id, f"Season set to: {season}")
-
-@app.on_message(filters.command("connectnews"))
-async def connect_news(client, message):
-    chat_id = message.chat.id
-    if len(message.text.split()) == 1:
-        await app.send_message(chat_id, "Please provide a channel id or username (without @).")
-        return
-
-    channel = " ".join(message.text.split()[1:]).strip()
-    global_settings_collection.update_one({"_id": "config"}, {"$set": {"news_channel": channel}}, upsert=True)
-    await app.send_message(chat_id, f"News channel set to: @{channel}")
-
-sent_news_entries = set()
-
-async def main():
-    await app.start()
-    print("Bot is running...")
-    asyncio.create_task(news_feed_loop(app, db, global_settings_collection, [URL_A, URL_B]))
-    await asyncio.Event().wait()
-
-if __name__ == '__main__':
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(main())
