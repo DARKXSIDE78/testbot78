@@ -39,3 +39,7 @@ V3:
 - Added /setmangachannel to set manga template channel.
 - Added /setchapters to set chapter on your own in manga template [E.G. /setchapters 67 or /setchapters {chapters} to fetch from anilist].
 - Code Optimised.
+
+V3.1:
+
+- Fixed Manga Error.
