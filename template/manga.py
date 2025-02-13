@@ -84,7 +84,7 @@ async def get_manga_data(manga_name: str, language: str, global_settings_collect
         except Exception as e:
             return f"An error occurred: {str(e)}", "https://envs.sh/YsH.jpg"
 
-async def send_message_to_user(app: Client, chat_id: int, message: str, image_url: str = None):
+async def send_message_to_user_manga(app: Client, chat_id: int, message: str, image_url: str = None):
     """Sends a message or image with caption to a Telegram user."""
     try:
         if image_url:
