@@ -197,7 +197,7 @@ sent_news_entries = set()
 async def main():
     await app.start()
     print("Bot is running...")
-    asyncio.create_task(news_feed_loop(app, db, global_settings_collection, [URL_A, URL_B]))
+    asyncio.create_task(news_feed_loop(app, db, global_settings_collection, [URL_A]))
     await asyncio.Event().wait()
 
 if __name__ == '__main__':
